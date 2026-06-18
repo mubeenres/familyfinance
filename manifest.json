@@ -2,7 +2,7 @@
   "name": "FamilyFinance — Expense Tracker",
   "short_name": "FamilyFinance",
   "description": "Shared family expense tracking with OCR, AI insights, and Google Sheets",
-  "start_url": "/index.html",
+  "start_url": "/familyfinance/index.html",
   "display": "standalone",
   "background_color": "#0D47A1",
   "theme_color": "#1565C0",
