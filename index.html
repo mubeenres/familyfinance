@@ -1,0 +1,2212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1565C0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>FamilyFinance — Shared Expense Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<script src="https://www.gstatic.com/charts/loader.js"></script>
+<style>
+:root {
+  --blue-50: #E3F2FD;
+  --blue-100: #BBDEFB;
+  --blue-200: #90CAF9;
+  --blue-300: #64B5F6;
+  --blue-400: #42A5F5;
+  --blue-500: #2196F3;
+  --blue-600: #1E88E5;
+  --blue-700: #1565C0;
+  --blue-800: #0D47A1;
+  --blue-900: #062f7c;
+  --indigo-700: #303F9F;
+  --surface: #FFFFFF;
+  --surface-2: #F8FAFF;
+  --surface-3: #EEF3FC;
+  --text-primary: #0D1B2A;
+  --text-secondary: #4A5568;
+  --text-muted: #718096;
+  --text-on-blue: #FFFFFF;
+  --border: rgba(30, 136, 229, 0.15);
+  --border-strong: rgba(30, 136, 229, 0.3);
+  --success: #2E7D32;
+  --success-bg: #E8F5E9;
+  --warning: #E65100;
+  --warning-bg: #FFF3E0;
+  --danger: #C62828;
+  --danger-bg: #FFEBEE;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(21,101,192,0.12), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 24px rgba(21,101,192,0.15), 0 4px 8px rgba(0,0,0,0.06);
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+[data-theme="dark"] {
+  --surface: #0F1923;
+  --surface-2: #162030;
+  --surface-3: #1C2940;
+  --text-primary: #E8F0FE;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --border: rgba(66, 165, 245, 0.15);
+  --border-strong: rgba(66, 165, 245, 0.3);
+  --blue-50: #0D2137;
+  --blue-100: #0D2D4A;
+  --blue-200: #0D3B5E;
+  --success-bg: #1B3A1E;
+  --warning-bg: #2D1B00;
+  --danger-bg: #2D0A0A;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: 'Inter', -apple-system, sans-serif; background: var(--surface-3); color: var(--text-primary); overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; position: relative; overflow-x: hidden; }
+
+/* ── App Shell ── */
+#app-header {
+  background: linear-gradient(135deg, var(--blue-700) 0%, var(--blue-800) 100%);
+  padding: 48px 20px 20px;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: var(--shadow-md);
+}
+.header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.app-brand { font-size: 20px; font-weight: 700; color: white; letter-spacing: -0.5px; }
+.header-actions { display: flex; gap: 8px; }
+.icon-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(255,255,255,0.15); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background var(--transition); }
+.icon-btn:hover { background: rgba(255,255,255,0.25); }
+.icon-btn .material-icons-round { font-size: 20px; }
+.user-greeting { font-size: 13px; color: rgba(255,255,255,0.75); margin-bottom: 12px; }
+.user-greeting span { color: white; font-weight: 600; }
+
+/* Tab Bar */
+#tab-bar {
+  background: var(--blue-800);
+  display: flex; overflow-x: auto;
+  scrollbar-width: none; border-top: 1px solid rgba(255,255,255,0.1);
+}
+#tab-bar::-webkit-scrollbar { display: none; }
+.tab-item { flex: 0 0 auto; padding: 10px 16px; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; color: rgba(255,255,255,0.6); transition: color var(--transition); border-bottom: 2px solid transparent; min-width: 72px; }
+.tab-item.active { color: white; border-bottom-color: #64B5F6; }
+.tab-item .material-icons-round { font-size: 20px; }
+.tab-item span { font-size: 10px; font-weight: 500; letter-spacing: 0.3px; }
+
+/* Content Area */
+#content { flex: 1; overflow-y: auto; padding-bottom: 80px; }
+.view { display: none; animation: fadeIn 0.25s ease; }
+.view.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Bottom Nav */
+#bottom-nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 430px;
+  background: var(--surface); border-top: 1px solid var(--border);
+  display: flex; z-index: 100; padding: 6px 0 env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+}
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; cursor: pointer; color: var(--text-muted); transition: color var(--transition); }
+.nav-item.active { color: var(--blue-700); }
+.nav-item .material-icons-round { font-size: 22px; }
+.nav-item span { font-size: 10px; font-weight: 500; }
+.nav-fab { position: absolute; top: -24px; left: 50%; transform: translateX(-50%); width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, var(--blue-600), var(--blue-800)); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg); color: white; transition: transform var(--transition); }
+.nav-fab:hover { transform: translateX(-50%) scale(1.05); }
+.nav-fab .material-icons-round { font-size: 26px; }
+
+/* ── Cards ── */
+.card { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 16px; margin: 0 16px 12px; box-shadow: var(--shadow-sm); }
+.card-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+.section-header { padding: 16px 16px 8px; display: flex; justify-content: space-between; align-items: center; }
+.section-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.section-link { font-size: 13px; color: var(--blue-600); font-weight: 500; cursor: pointer; }
+
+/* ── Dashboard ── */
+.metric-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 16px 4px; }
+.metric-card { background: var(--surface); border-radius: var(--radius-md); border: 1px solid var(--border); padding: 14px; box-shadow: var(--shadow-sm); }
+.metric-card.accent { background: linear-gradient(135deg, var(--blue-700), var(--blue-800)); border-color: transparent; }
+.metric-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
+.metric-card.accent .metric-label { color: rgba(255,255,255,0.7); }
+.metric-value { font-size: 22px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+.metric-card.accent .metric-value { color: white; }
+.metric-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+.metric-card.accent .metric-sub { color: rgba(255,255,255,0.6); }
+.metric-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; margin-top: 6px; }
+.badge-success { background: var(--success-bg); color: var(--success); }
+.badge-warning { background: var(--warning-bg); color: var(--warning); }
+.badge-danger { background: var(--danger-bg); color: var(--danger); }
+.badge-info { background: var(--blue-50); color: var(--blue-700); }
+
+/* Score Gauge */
+.score-card { background: linear-gradient(135deg, var(--blue-700), var(--blue-900)); border-radius: var(--radius-xl); padding: 20px; margin: 0 16px 12px; color: white; position: relative; overflow: hidden; }
+.score-card::before { content: ''; position: absolute; top: -30px; right: -30px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.05); }
+.score-title { font-size: 13px; font-weight: 600; opacity: 0.8; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+.score-display { display: flex; align-items: flex-end; gap: 12px; }
+.score-number { font-size: 52px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
+.score-info { flex: 1; }
+.score-label { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+.score-desc { font-size: 12px; opacity: 0.7; }
+.score-bar { height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; margin-top: 16px; }
+.score-bar-fill { height: 100%; background: #64B5F6; border-radius: 3px; transition: width 1s ease; }
+.score-factors { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.score-factor { font-size: 11px; background: rgba(255,255,255,0.1); padding: 3px 10px; border-radius: 20px; }
+
+/* Expense List */
+.expense-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background var(--transition); }
+.expense-item:last-child { border-bottom: none; }
+.expense-item:hover { background: var(--surface-2); }
+.expense-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.expense-icon .material-icons-round { font-size: 20px; }
+.expense-details { flex: 1; min-width: 0; }
+.expense-vendor { font-size: 14px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.expense-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.expense-right { text-align: right; flex-shrink: 0; }
+.expense-amount { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.expense-paidby { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* Category colors */
+.cat-groceries { background: #E8F5E9; color: #2E7D32; }
+.cat-restaurant { background: #FFF3E0; color: #E65100; }
+.cat-fuel { background: #E3F2FD; color: #1565C0; }
+.cat-medical { background: #FCE4EC; color: #C62828; }
+.cat-education { background: #F3E5F5; color: #6A1B9A; }
+.cat-utilities { background: #E0F2F1; color: #00695C; }
+.cat-entertainment { background: #FFF8E1; color: #F57F17; }
+.cat-shopping { background: #EDE7F6; color: #4527A0; }
+.cat-default { background: var(--blue-50); color: var(--blue-700); }
+
+/* Budget bars */
+.budget-item { margin-bottom: 16px; }
+.budget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.budget-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.budget-amounts { font-size: 12px; color: var(--text-muted); }
+.budget-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.budget-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+.budget-fill.safe { background: linear-gradient(90deg, #4CAF50, #66BB6A); }
+.budget-fill.warn { background: linear-gradient(90deg, #FF9800, #FFB74D); }
+.budget-fill.danger { background: linear-gradient(90deg, #F44336, #EF5350); }
+
+/* Forms */
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.3px; }
+.form-control { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 15px; color: var(--text-primary); font-family: inherit; transition: border-color var(--transition), box-shadow var(--transition); appearance: none; }
+.form-control:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.12); }
+select.form-control { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364B5F6' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 40px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.btn { border: none; border-radius: var(--radius-md); padding: 14px 20px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all var(--transition); font-family: inherit; }
+.btn-primary { background: linear-gradient(135deg, var(--blue-600), var(--blue-800)); color: white; width: 100%; box-shadow: var(--shadow-md); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+.btn-secondary { background: var(--surface-2); color: var(--blue-700); border: 1px solid var(--border-strong); }
+.btn-outline { background: transparent; color: var(--blue-600); border: 1px solid var(--blue-300); }
+
+/* OCR Upload */
+.upload-zone { border: 2px dashed var(--border-strong); border-radius: var(--radius-lg); padding: 32px; text-align: center; cursor: pointer; transition: all var(--transition); background: var(--surface-2); }
+.upload-zone:hover, .upload-zone.dragover { border-color: var(--blue-500); background: var(--blue-50); }
+.upload-zone .material-icons-round { font-size: 48px; color: var(--blue-400); margin-bottom: 12px; }
+.upload-title { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+.upload-sub { font-size: 13px; color: var(--text-muted); }
+.upload-actions { display: flex; gap: 8px; margin-top: 16px; }
+.ocr-result { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; margin-top: 16px; }
+.ocr-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px; margin-bottom: 10px; }
+.ocr-confidence { font-size: 13px; color: var(--text-secondary); }
+
+/* AI Insights */
+.insight-card { border-radius: var(--radius-lg); padding: 16px; margin-bottom: 10px; border-left: 4px solid; }
+.insight-good { background: var(--success-bg); border-color: var(--success); }
+.insight-bad { background: var(--danger-bg); border-color: var(--danger); }
+.insight-neutral { background: var(--blue-50); border-color: var(--blue-500); }
+.insight-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.insight-type { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.insight-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.insight-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+.insight-impact { font-size: 12px; font-weight: 600; margin-top: 8px; }
+
+/* Inventory */
+.inventory-item { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); gap: 12px; }
+.inventory-item:last-child { border-bottom: none; }
+.inv-info { flex: 1; }
+.inv-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.inv-qty { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.inv-bar-wrap { flex: 0 0 80px; }
+.inv-pct { font-size: 11px; font-weight: 700; text-align: right; margin-bottom: 3px; }
+.inv-bar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.inv-fill { height: 100%; border-radius: 3px; }
+
+/* Member avatars */
+.member-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.member-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; display: flex; align-items: center; gap: 10px; box-shadow: var(--shadow-sm); }
+.member-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; flex-shrink: 0; }
+.member-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.member-amount { font-size: 13px; color: var(--blue-600); font-weight: 700; }
+.member-role { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+
+/* Notification items */
+.notif-item { display: flex; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.notif-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.notif-icon .material-icons-round { font-size: 18px; }
+.notif-text { flex: 1; }
+.notif-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.notif-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
+.notif-time { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+/* Modal / Sheet */
+.sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; opacity: 0; pointer-events: none; transition: opacity var(--transition); backdrop-filter: blur(4px); }
+.sheet-overlay.open { opacity: 1; pointer-events: all; }
+.sheet { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%); width: 100%; max-width: 430px; max-height: 90vh; background: var(--surface); border-radius: var(--radius-xl) var(--radius-xl) 0 0; z-index: 201; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); overflow-y: auto; }
+.sheet.open { transform: translateX(-50%) translateY(0); }
+.sheet-handle { width: 40px; height: 4px; background: var(--border-strong); border-radius: 2px; margin: 12px auto 16px; }
+.sheet-header { padding: 0 20px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+.sheet-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.sheet-body { padding: 20px; }
+
+/* Chip filters */
+.chips { display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: 0 0 auto; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all var(--transition); background: var(--surface); border: 1px solid var(--border); color: var(--text-secondary); }
+.chip.active { background: var(--blue-700); border-color: var(--blue-700); color: white; }
+
+/* Charts */
+.chart-container { padding: 0 4px; }
+
+/* Toggle */
+.toggle-wrap { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; }
+.toggle-label { font-size: 14px; color: var(--text-primary); }
+.toggle { position: relative; display: inline-block; width: 44px; height: 24px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; inset: 0; background: var(--border-strong); border-radius: 12px; cursor: pointer; transition: background var(--transition); }
+.toggle-slider:before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: transform var(--transition); }
+.toggle input:checked + .toggle-slider { background: var(--blue-600); }
+.toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 40px 20px; }
+.empty-state .material-icons-round { font-size: 56px; color: var(--border-strong); margin-bottom: 12px; }
+.empty-title { font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+.empty-desc { font-size: 14px; color: var(--text-muted); }
+
+/* Loading shimmer */
+.shimmer { background: linear-gradient(90deg, var(--border) 25%, var(--surface-2) 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* Tooltip */
+.tooltip-wrap { position: relative; display: inline-block; }
+.tooltip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--surface); font-size: 11px; padding: 5px 10px; border-radius: 6px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity var(--transition); margin-bottom: 6px; }
+.tooltip-wrap:hover .tooltip { opacity: 1; }
+
+/* Chart label */
+.chart-label { font-size: 12px; color: var(--text-muted); padding: 8px 16px 4px; }
+
+/* Recurring payments */
+.recurring-item { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); gap: 12px; }
+.recurring-icon { width: 38px; height: 38px; background: var(--blue-50); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.recurring-icon .material-icons-round { font-size: 20px; color: var(--blue-600); }
+.recurring-info { flex: 1; }
+.recurring-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.recurring-due { font-size: 12px; color: var(--text-muted); }
+.recurring-amt { font-size: 15px; font-weight: 700; color: var(--blue-700); }
+.due-badge { font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: 700; display: inline-block; margin-left: 6px; }
+.due-soon { background: #FFF3E0; color: #E65100; }
+.due-ok { background: var(--success-bg); color: var(--success); }
+
+/* Animations */
+.pulse { animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+/* Utility */
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-danger { color: var(--danger); }
+.text-blue { color: var(--blue-600); }
+.fw-700 { font-weight: 700; }
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.spacer { height: 12px; }
+.global-loader {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--blue-400), var(--blue-200), var(--blue-400));
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  z-index: 9999;
+  display: none;
+}
+.global-loader.visible { display: block; }
+</style>
+</head>
+<body>
+<div class="global-loader" id="global-loader"></div>
+<!-- App Header -->
+<div id="app-header">
+  <div class="header-top">
+    <div class="app-brand">💰 FamilyFinance</div>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme">
+        <span class="material-icons-round" id="theme-icon">dark_mode</span>
+      </button>
+      <button class="icon-btn" onclick="refreshData()" title="Refresh data">
+      <span class="material-icons-round">sync</span>
+      </button>
+      <button class="icon-btn" onclick="openSheet('notif-sheet')" title="Notifications">
+        <span class="material-icons-round">notifications</span>
+      </button>
+      <button class="icon-btn" onclick="openSheet('profile-sheet')" title="Profile">
+        <span class="material-icons-round">account_circle</span>
+      </button>
+    </div>
+  </div>
+  <div class="user-greeting">Welcome back, <span id="current-user-name">Mubeen</span> 👋</div>
+
+  <!-- Tab bar -->
+  <div id="tab-bar">
+    <div class="tab-item active" onclick="switchView('dashboard', this)">
+      <span class="material-icons-round">dashboard</span>
+      <span>Dashboard</span>
+    </div>
+    <div class="tab-item" onclick="switchView('expenses', this)">
+      <span class="material-icons-round">receipt_long</span>
+      <span>Expenses</span>
+    </div>
+    <div class="tab-item" onclick="switchView('budget', this)">
+      <span class="material-icons-round">account_balance_wallet</span>
+      <span>Budget</span>
+    </div>
+    <div class="tab-item" onclick="switchView('inventory', this)">
+      <span class="material-icons-round">inventory_2</span>
+      <span>Inventory</span>
+    </div>
+    <div class="tab-item" onclick="switchView('analytics', this)">
+      <span class="material-icons-round">insights</span>
+      <span>Analytics</span>
+    </div>
+  </div>
+</div>
+
+<!-- Content -->
+<div id="content">
+
+  <!-- ═══ DASHBOARD VIEW ═══ -->
+  <div id="view-dashboard" class="view active">
+    <!-- Score Card -->
+    <div style="padding: 16px 16px 4px;">
+      <div class="score-card">
+        <div class="score-title">Monthly Financial Health</div>
+        <div class="score-display">
+          <div class="score-number" id="health-score">78</div>
+          <div class="score-info">
+            <div class="score-label" id="health-label">Good</div>
+            <div class="score-desc">June 2025 — 18 days remaining</div>
+          </div>
+        </div>
+        <div class="score-bar"><div class="score-bar-fill" id="score-fill" style="width: 78%"></div></div>
+        <div class="score-factors">
+          <div class="score-factor">✅ Budget 82%</div>
+          <div class="score-factor">📉 Savings 65%</div>
+          <div class="score-factor">⚡ Utilities 90%</div>
+          <div class="score-factor">🛍️ Lifestyle 70%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metric Cards -->
+    <div class="metric-row">
+      <div class="metric-card accent">
+        <div class="metric-label">Monthly Spend</div>
+        <div class="metric-value">BD 847</div>
+        <div class="metric-sub">of BD 1,400 budget</div>
+        <div class="metric-badge badge-success">▼ 12% vs last month</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Remaining</div>
+        <div class="metric-value" style="color: var(--blue-600);">BD 553</div>
+        <div class="metric-sub">39.5% of budget left</div>
+        <div class="metric-badge badge-info">18 days to go</div>
+      </div>
+    </div>
+    <div class="metric-row" style="padding-top: 4px;">
+      <div class="metric-card">
+        <div class="metric-label">Upcoming Bills</div>
+        <div class="metric-value">BD 320</div>
+        <div class="metric-sub">3 bills this week</div>
+        <div class="metric-badge badge-warning">⚠ Rent due in 5d</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Inventory</div>
+        <div class="metric-value">87%</div>
+        <div class="metric-sub">Stock level</div>
+        <div class="metric-badge badge-danger">2 items low</div>
+      </div>
+    </div>
+
+    <!-- Spend Trend Chart -->
+    <div class="section-header">
+      <div class="section-title">Spending Trend</div>
+      <div class="section-link" onclick="switchToView('analytics')">Full Report →</div>
+    </div>
+    <div class="card" style="padding: 12px;">
+      <div class="chart-container">
+        <canvas id="trendChart" role="img" aria-label="Monthly expense trend Jan-Jun 2025" style="height: 180px;"></canvas>
+      </div>
+    </div>
+
+    <!-- Category Breakdown -->
+    <div class="section-header">
+      <div class="section-title">This Month</div>
+      <select class="form-control" style="width: auto; padding: 6px 28px 6px 10px; font-size: 12px; margin-left: auto;">
+        <option>June 2025</option><option>May 2025</option><option>April 2025</option>
+      </select>
+    </div>
+    <div class="card" style="padding: 12px;">
+      <canvas id="catChart" role="img" aria-label="Category spending pie chart" style="height: 200px;"></canvas>
+      <div id="cat-legend" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; font-size: 12px;"></div>
+    </div>
+
+    <!-- AI Quick Insight -->
+    <div class="section-header">
+      <div class="section-title">AI Insights</div>
+      <div class="section-link" onclick="openSheet('ai-sheet')">View All</div>
+    </div>
+    <div style="padding: 0 16px;">
+      <div class="insight-card insight-good">
+        <div class="insight-header">
+          <span class="material-icons-round" style="font-size: 18px; color: var(--success);">thumb_up</span>
+          <span class="insight-type" style="color: var(--success);">Good Spend</span>
+        </div>
+        <div class="insight-title">Grocery spending on track</div>
+        <div class="insight-desc">Grocery expenses are 8% below budget. Your meal planning is saving approximately BD 34/month.</div>
+        <div class="insight-impact text-success">💚 Saving BD 34/month · Keep it up!</div>
+      </div>
+      <div class="insight-card insight-bad">
+        <div class="insight-header">
+          <span class="material-icons-round" style="font-size: 18px; color: var(--danger);">warning</span>
+          <span class="insight-type" style="color: var(--danger);">Bad Spend Alert</span>
+        </div>
+        <div class="insight-title">Restaurant spending 42% over budget</div>
+        <div class="insight-desc">Dining out has exceeded budget 3 months in a row. Consider setting a stricter weekly limit.</div>
+        <div class="insight-impact text-danger">🔴 Overspent by BD 67 · Action needed</div>
+      </div>
+    </div>
+
+    <!-- Recent Expenses -->
+    <div class="section-header">
+      <div class="section-title">Recent Expenses</div>
+      <div class="section-link" onclick="switchToView('expenses')">See All</div>
+    </div>
+    <div class="card" style="padding: 0;">
+      <div id="recent-expenses"></div>
+    </div>
+
+    <!-- Member Spending -->
+    <div class="section-header">
+      <div class="section-title">Family Spending</div>
+    </div>
+    <div style="padding: 0 16px 12px;">
+      <div class="member-grid">
+        <div class="member-card">
+          <div class="member-avatar" style="background: #E3F2FD; color: #1565C0;">MU</div>
+          <div>
+            <div class="member-name">Mubeen</div>
+            <div class="member-role">Admin</div>
+            <div class="member-amount">BD 312</div>
+          </div>
+        </div>
+        <div class="member-card">
+          <div class="member-avatar" style="background: #FCE4EC; color: #C62828;">HA</div>
+          <div>
+            <div class="member-name">Hajara</div>
+            <div class="member-role">Member</div>
+            <div class="member-amount">BD 248</div>
+          </div>
+        </div>
+        <div class="member-card">
+          <div class="member-avatar" style="background: #E8F5E9; color: #2E7D32;">AF</div>
+          <div>
+            <div class="member-name">Afnan</div>
+            <div class="member-role">Member</div>
+            <div class="member-amount">BD 187</div>
+          </div>
+        </div>
+        <div class="member-card">
+          <div class="member-avatar" style="background: #F3E5F5; color: #6A1B9A;">AZ</div>
+          <div>
+            <div class="member-name">Afraz</div>
+            <div class="member-role">Member</div>
+            <div class="member-amount">BD 100</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recurring Payments -->
+    <div class="section-header">
+      <div class="section-title">Upcoming Payments</div>
+    </div>
+    <div class="card" style="padding: 0;">
+      <div class="recurring-item">
+        <div class="recurring-icon"><span class="material-icons-round">home</span></div>
+        <div class="recurring-info">
+          <div class="recurring-name">House Rent <span class="due-badge due-soon">5 days</span></div>
+          <div class="recurring-due">Due Jun 23, 2025</div>
+        </div>
+        <div class="recurring-amt">BD 200</div>
+      </div>
+      <div class="recurring-item">
+        <div class="recurring-icon"><span class="material-icons-round">bolt</span></div>
+        <div class="recurring-info">
+          <div class="recurring-name">Electricity <span class="due-badge due-ok">12 days</span></div>
+          <div class="recurring-due">Due Jun 30, 2025</div>
+        </div>
+        <div class="recurring-amt">BD 45</div>
+      </div>
+      <div class="recurring-item">
+        <div class="recurring-icon"><span class="material-icons-round">school</span></div>
+        <div class="recurring-info">
+          <div class="recurring-name">School Fees <span class="due-badge due-ok">15 days</span></div>
+          <div class="recurring-due">Due Jul 3, 2025</div>
+        </div>
+        <div class="recurring-amt">BD 75</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ EXPENSES VIEW ═══ -->
+  <div id="view-expenses" class="view">
+    <!-- Search -->
+    <div style="padding: 16px 16px 0;">
+      <div style="position: relative;">
+        <span class="material-icons-round" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 20px;">search</span>
+        <input type="text" class="form-control" placeholder="Search expenses..." style="padding-left: 40px;" oninput="filterExpenses(this.value)">
+      </div>
+    </div>
+
+    <!-- Category Filter Chips -->
+    <div class="chips">
+      <div class="chip active" onclick="filterCat(this, 'all')">All</div>
+      <div class="chip" onclick="filterCat(this, 'Groceries')">🛒 Groceries</div>
+      <div class="chip" onclick="filterCat(this, 'Restaurant')">🍽 Dining</div>
+      <div class="chip" onclick="filterCat(this, 'Fuel')">⛽ Fuel</div>
+      <div class="chip" onclick="filterCat(this, 'Medical')">🏥 Medical</div>
+      <div class="chip" onclick="filterCat(this, 'Education')">📚 Education</div>
+      <div class="chip" onclick="filterCat(this, 'Utilities')">⚡ Utilities</div>
+      <div class="chip" onclick="filterCat(this, 'Entertainment')">🎬 Fun</div>
+    </div>
+
+    <!-- Summary Row -->
+    <div style="display: flex; gap: 10px; padding: 0 16px 12px;">
+      <div style="flex:1; background: var(--success-bg); border-radius: var(--radius-sm); padding: 10px 12px; text-align: center;">
+        <div style="font-size: 11px; color: var(--success); font-weight: 600;">GOOD SPEND</div>
+        <div style="font-size: 17px; font-weight: 700; color: var(--success);">BD 612</div>
+      </div>
+      <div style="flex:1; background: var(--danger-bg); border-radius: var(--radius-sm); padding: 10px 12px; text-align: center;">
+        <div style="font-size: 11px; color: var(--danger); font-weight: 600;">BAD SPEND</div>
+        <div style="font-size: 17px; font-weight: 700; color: var(--danger);">BD 235</div>
+      </div>
+      <div style="flex:1; background: var(--blue-50); border-radius: var(--radius-sm); padding: 10px 12px; text-align: center;">
+        <div style="font-size: 11px; color: var(--blue-700); font-weight: 600;">TOTAL</div>
+        <div style="font-size: 17px; font-weight: 700; color: var(--blue-700);">BD 847</div>
+      </div>
+    </div>
+
+    <!-- Expense List -->
+    <div class="card" style="padding: 0;" id="expense-list-card">
+      <div id="expense-list"></div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ BUDGET VIEW ═══ -->
+  <div id="view-budget" class="view">
+    <div style="padding: 16px 16px 4px;">
+      <!-- Month selector -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <button class="icon-btn" style="background: var(--surface-2); color: var(--text-primary);" onclick="changeBudgetMonth(-1)">
+          <span class="material-icons-round">chevron_left</span>
+        </button>
+        <div style="font-size: 16px; font-weight: 700;" id="budget-month-label">June 2025</div>
+        <button class="icon-btn" style="background: var(--surface-2); color: var(--text-primary);" onclick="changeBudgetMonth(1)">
+          <span class="material-icons-round">chevron_right</span>
+        </button>
+      </div>
+
+      <!-- Summary -->
+      <div class="score-card" style="padding: 16px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; text-align: center;">
+          <div>
+            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">ALLOCATED</div>
+            <div style="font-size: 20px; font-weight: 700;">BD 1,400</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">USED</div>
+            <div style="font-size: 20px; font-weight: 700; color: #90CAF9;">BD 847</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">LEFT</div>
+            <div style="font-size: 20px; font-weight: 700; color: #A5D6A7;">BD 553</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Budget Items -->
+    <div class="section-header">
+      <div class="section-title">Budget Categories</div>
+      <button class="btn btn-outline" style="padding: 6px 14px; font-size: 13px;" onclick="openSheet('edit-budget-sheet')">
+        <span class="material-icons-round" style="font-size: 16px;">edit</span> Edit
+      </button>
+    </div>
+    <div class="card" id="budget-list"></div>
+
+    <!-- Rollover Section -->
+    <div class="card">
+      <div class="card-title">Budget Settings</div>
+      <div class="toggle-wrap">
+        <span class="toggle-label">Rollover unused budget</span>
+        <label class="toggle"><input type="checkbox" checked onchange="toggleRollover(this)"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="toggle-wrap" style="border-top: 1px solid var(--border); padding-top: 12px;">
+        <span class="toggle-label">Auto-reset monthly</span>
+        <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="toggle-wrap" style="border-top: 1px solid var(--border); padding-top: 12px;">
+        <span class="toggle-label">Threshold alerts at 80%</span>
+        <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+
+    <div class="section-header"><div class="section-title">Budget History</div></div>
+    <div class="card" style="padding: 12px;">
+      <canvas id="budgetHistChart" role="img" aria-label="Budget history bar chart" style="height: 160px;"></canvas>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ INVENTORY VIEW ═══ -->
+  <div id="view-inventory" class="view">
+    <div class="chips">
+      <div class="chip active" onclick="filterInv(this, 'all')">All</div>
+      <div class="chip" onclick="filterInv(this, 'Grocery')">🛒 Grocery</div>
+      <div class="chip" onclick="filterInv(this, 'Household')">🏠 Household</div>
+    </div>
+
+    <!-- Alerts -->
+    <div style="padding: 0 16px 12px;">
+      <div style="background: var(--danger-bg); border: 1px solid var(--danger); border-radius: var(--radius-md); padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start;">
+        <span class="material-icons-round" style="color: var(--danger); font-size: 20px; margin-top: 2px;">warning</span>
+        <div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--danger);">Low Stock Alert</div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 3px;">Cooking Oil (8% left) and Detergent (12% left) need restocking within 3 days.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">Grocery Items</div>
+      <button class="btn btn-outline" style="padding: 6px 14px; font-size: 13px;" onclick="openSheet('add-inventory-sheet')">+ Add</button>
+    </div>
+    <div class="card" style="padding: 0;" id="inventory-grocery"></div>
+
+    <div class="section-header"><div class="section-title">Household Items</div></div>
+    <div class="card" style="padding: 0;" id="inventory-household"></div>
+
+    <!-- Consumption Insights -->
+    <div class="section-header"><div class="section-title">Consumption Analytics</div></div>
+    <div class="card" style="padding: 12px;">
+      <canvas id="consumptionChart" role="img" aria-label="Consumption analytics bar chart" style="height: 200px;"></canvas>
+    </div>
+
+    <!-- Restock Recommendations -->
+    <div class="section-header"><div class="section-title">Restock Recommendations</div></div>
+    <div class="card">
+      <div class="insight-card insight-neutral" style="margin-bottom: 10px;">
+        <div class="insight-title">📦 Weekly Restock</div>
+        <div class="insight-desc">Buy Cooking Oil (2L), Detergent (1 pack), and Milk (6 pcs) this week. Estimated cost: BD 8.50</div>
+      </div>
+      <div class="insight-card insight-good">
+        <div class="insight-title">💡 Bulk Buy Opportunity</div>
+        <div class="insight-desc">Rice is on sale at Lulu this month. Buying 5kg extra saves BD 2.10 based on price trends.</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ ANALYTICS VIEW ═══ -->
+  <div id="view-analytics" class="view">
+    <div class="section-header"><div class="section-title">Good vs Bad Spend</div></div>
+    <div class="card" style="padding: 12px;">
+      <canvas id="goodBadChart" role="img" aria-label="Good vs bad spending by month" style="height: 180px;"></canvas>
+    </div>
+
+    <div class="section-header"><div class="section-title">Family Member Comparison</div></div>
+    <div class="card" style="padding: 12px;">
+      <canvas id="memberChart" role="img" aria-label="Family member spending comparison" style="height: 180px;"></canvas>
+    </div>
+
+    <div class="section-header"><div class="section-title">Category Inflation</div></div>
+    <div class="card">
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">vs. last month</div>
+      <div id="inflation-list"></div>
+    </div>
+
+    <div class="section-header"><div class="section-title">Forecasted Expenses</div></div>
+    <div class="card" style="padding: 12px;">
+      <canvas id="forecastChart" role="img" aria-label="3-month expense forecast" style="height: 160px;"></canvas>
+    </div>
+
+    <div class="section-header"><div class="section-title">AI Financial Analysis</div></div>
+    <div style="padding: 0 16px;" id="ai-insights-list"></div>
+
+    <div class="spacer"></div>
+  </div>
+
+</div>
+
+<!-- ── FAB Button ── -->
+<div id="bottom-nav">
+  <div class="nav-item active" onclick="switchToView('dashboard')">
+    <span class="material-icons-round">home</span>
+    <span>Home</span>
+  </div>
+  <div class="nav-item" onclick="switchToView('expenses')">
+    <span class="material-icons-round">receipt_long</span>
+    <span>Expenses</span>
+  </div>
+  <button class="nav-fab" onclick="openSheet('add-expense-sheet')" title="Add Expense">
+    <span class="material-icons-round">add</span>
+  </button>
+  <div class="nav-item" onclick="switchToView('inventory')">
+    <span class="material-icons-round">inventory_2</span>
+    <span>Inventory</span>
+  </div>
+  <div class="nav-item" onclick="switchToView('analytics')">
+    <span class="material-icons-round">bar_chart</span>
+    <span>Analytics</span>
+  </div>
+</div>
+
+<!-- ══ SHEETS ══ -->
+
+<!-- Add Expense Sheet -->
+<div class="sheet-overlay" id="overlay-add-expense-sheet" onclick="closeSheet('add-expense-sheet')"></div>
+<div class="sheet" id="add-expense-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Add Expense</div>
+    <button class="icon-btn" style="background: var(--surface-2); color: var(--text-primary);" onclick="closeSheet('add-expense-sheet')">
+      <span class="material-icons-round">close</span>
+    </button>
+  </div>
+  <!-- Input method tabs -->
+  <div style="display: flex; gap: 8px; padding: 16px 20px 0;">
+    <button class="btn btn-primary" style="flex:1; padding: 10px; font-size: 13px;" onclick="showAddTab('manual')" id="tab-manual">✏️ Manual</button>
+    <button class="btn btn-secondary" style="flex:1; padding: 10px; font-size: 13px;" onclick="showAddTab('ocr')" id="tab-ocr">📷 Receipt</button>
+  </div>
+  <div class="sheet-body">
+    <!-- Manual Entry -->
+    <div id="add-manual">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" class="form-control" id="exp-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Amount (BD)</label>
+          <input type="number" class="form-control" id="exp-amount" placeholder="0.000" step="0.001">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Vendor / Description</label>
+        <input type="text" class="form-control" id="exp-vendor" placeholder="e.g. Carrefour, DEWA...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-control" id="exp-cat" onchange="updateSubcat()">
+            <option value="">Select...</option>
+            <optgroup label="Necessities">
+              <option>Groceries</option><option>Electricity</option><option>Water</option>
+              <option>Internet</option><option>Rent</option><option>School Fees</option>
+              <option>Fuel</option><option>Medical</option><option>Insurance</option>
+              <option>Home Maintenance</option>
+            </optgroup>
+            <optgroup label="Lifestyle">
+              <option>Restaurant</option><option>Entertainment</option><option>Shopping</option>
+              <option>Travel</option><option>Subscriptions</option><option>Outings</option><option>Gifts</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Subcategory</label>
+          <select class="form-control" id="exp-subcat">
+            <option value="">Select category first</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Paid By</label>
+          <select class="form-control" id="exp-paidby">
+            <option>Mubeen</option><option>Hajara</option><option>Afnan</option><option>Afraz</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tax (BD)</label>
+          <input type="number" class="form-control" id="exp-tax" placeholder="0.000" step="0.001">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Beneficiary</label>
+        <select class="form-control" id="exp-beneficiary">
+          <option>Whole Family</option><option>Mubeen</option><option>Hajara</option><option>Afnan</option><option>Afraz</option>
+        </select>
+      </div>
+      <div class="toggle-wrap">
+        <span class="toggle-label" style="font-size: 14px;">Shared Expense</span>
+        <label class="toggle"><input type="checkbox" id="exp-shared" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" id="exp-notes" placeholder="Optional notes..." rows="2" style="resize: none;"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="saveExpense()">
+        <span class="material-icons-round">save</span> Save Expense
+      </button>
+    </div>
+
+    <!-- OCR Entry -->
+    <div id="add-ocr" style="display: none;">
+      <div class="upload-zone" id="upload-zone" onclick="triggerFileUpload()" 
+           ondragover="event.preventDefault(); this.classList.add('dragover')"
+           ondragleave="this.classList.remove('dragover')"
+           ondrop="handleDrop(event)">
+        <span class="material-icons-round">document_scanner</span>
+        <div class="upload-title">Upload or Capture Receipt</div>
+        <div class="upload-sub">Tap to upload or drag & drop<br>JPG, PNG, PDF supported</div>
+      </div>
+      <input type="file" id="file-input" accept="image/*" capture="camera" style="display: none;" onchange="handleFileSelect(event)">
+      <div class="upload-actions">
+        <button class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('file-input').setAttribute('capture','camera'); triggerFileUpload()">
+          <span class="material-icons-round">camera_alt</span> Camera
+        </button>
+        <button class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('file-input').removeAttribute('capture'); triggerFileUpload()">
+          <span class="material-icons-round">photo_library</span> Gallery
+        </button>
+      </div>
+
+      <!-- OCR Preview (hidden until scan) -->
+      <div id="ocr-result-section" style="display: none;">
+        <div class="ocr-result">
+          <div class="ocr-badge badge-success">
+            <span class="material-icons-round" style="font-size: 14px;">verified</span>
+            OCR Confidence: <span id="ocr-confidence">94%</span>
+          </div>
+          <div class="form-group" style="margin-top: 10px;">
+            <label class="form-label">Vendor (OCR)</label>
+            <input type="text" class="form-control" id="ocr-vendor" value="">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Date (OCR)</label>
+              <input type="date" class="form-control" id="ocr-date">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Total (BD)</label>
+              <input type="number" class="form-control" id="ocr-amount">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tax (OCR)</label>
+            <input type="number" class="form-control" id="ocr-tax">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Line Items (OCR)</label>
+            <textarea class="form-control" id="ocr-items" rows="4" style="resize: none; font-size: 12px; font-family: 'Roboto Mono', monospace;"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Category</label>
+              <select class="form-control" id="ocr-cat">
+                <option>Groceries</option><option>Restaurant</option><option>Fuel</option>
+                <option>Medical</option><option>Shopping</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Paid By</label>
+              <select class="form-control" id="ocr-paidby">
+                <option>Mubeen</option><option>Hajara</option><option>Afnan</option><option>Afraz</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveOCRExpense()">
+            <span class="material-icons-round">save</span> Confirm & Save
+          </button>
+        </div>
+      </div>
+
+      <!-- Processing indicator -->
+      <div id="ocr-processing" style="display: none; text-align: center; padding: 24px;">
+        <div class="shimmer" style="width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 16px;"></div>
+        <div style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Reading Receipt...</div>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">Using Google Vision AI + Gemini</div>
+        <div class="shimmer" style="height: 12px; border-radius: 6px; margin-top: 20px;"></div>
+        <div class="shimmer" style="height: 12px; border-radius: 6px; margin-top: 8px; width: 80%;"></div>
+        <div class="shimmer" style="height: 12px; border-radius: 6px; margin-top: 8px; width: 60%;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Notifications Sheet -->
+<div class="sheet-overlay" id="overlay-notif-sheet" onclick="closeSheet('notif-sheet')"></div>
+<div class="sheet" id="notif-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Notifications</div>
+    <button class="icon-btn" style="background: var(--surface-2); color: var(--text-primary);" onclick="closeSheet('notif-sheet')">
+      <span class="material-icons-round">close</span>
+    </button>
+  </div>
+  <div style="padding: 8px 0;" id="notif-list"></div>
+</div>
+
+<!-- Profile Sheet -->
+<div class="sheet-overlay" id="overlay-profile-sheet" onclick="closeSheet('profile-sheet')"></div>
+<div class="sheet" id="profile-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Account</div>
+    <button class="icon-btn" style="background: var(--surface-2); color: var(--text-primary);" onclick="closeSheet('profile-sheet')">
+      <span class="material-icons-round">close</span>
+    </button>
+  </div>
+  <div class="sheet-body">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <div style="width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, var(--blue-600), var(--blue-800)); margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: white;">MU</div>
+      <div style="font-size: 18px; font-weight: 700;">Mubeen</div>
+      <div style="font-size: 13px; color: var(--text-muted);">Admin · Family Manager</div>
+    </div>
+    <div style="border-top: 1px solid var(--border); padding-top: 16px;">
+      <div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.4px;">Switch User</div>
+      <div id="user-switcher"></div>
+    </div>
+    <div style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 8px;">
+      <div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.4px;">Connected Services</div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border);">
+        <span class="material-icons-round" style="color: #34A853; font-size: 20px;">check_circle</span>
+        <span style="font-size: 14px;">Google Sheets Database</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border);">
+        <span class="material-icons-round" style="color: #34A853; font-size: 20px;">check_circle</span>
+        <span style="font-size: 14px;">Google Vision OCR</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 10px 0;">
+        <span class="material-icons-round" style="color: #34A853; font-size: 20px;">check_circle</span>
+        <span style="font-size: 14px;">Gemini AI Analysis</span>
+      </div>
+    </div>
+    <div style="margin-top: 16px;">
+      <div class="form-label" style="margin-bottom: 8px;">Google Apps Script URL</div>
+      <input type="url" class="form-control" id="gas-url" placeholder="https://script.google.com/macros/s/..." style="font-size: 13px;">
+      <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Enter your deployed Apps Script Web App URL</div>
+    </div>
+    <button class="btn btn-primary" style="margin-top: 16px;" onclick="saveGasUrl()">
+      <span class="material-icons-round">save</span> Save Configuration
+    </button>
+  </div>
+</div>
+
+<!-- AI Insights Sheet -->
+<div class="sheet-overlay" id="overlay-ai-sheet" onclick="closeSheet('ai-sheet')"></div>
+<div class="sheet" id="ai-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">AI Financial Analysis</div>
+    <button class="icon-btn" style="background: var(--surface-2); color: var(--text-primary);" onclick="closeSheet('ai-sheet')">
+      <span class="material-icons-round">close</span>
+    </button>
+  </div>
+  <div class="sheet-body" id="ai-full-insights"></div>
+</div>
+
+<!-- Edit Budget Sheet -->
+<div class="sheet-overlay" id="overlay-edit-budget-sheet" onclick="closeSheet('edit-budget-sheet')"></div>
+<div class="sheet" id="edit-budget-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Edit Budgets</div>
+    <button class="icon-btn" style="background: var(--surface-2); color: var(--text-primary);" onclick="closeSheet('edit-budget-sheet')">
+      <span class="material-icons-round">close</span>
+    </button>
+  </div>
+  <div class="sheet-body" id="edit-budget-body"></div>
+</div>
+
+<!-- Add Inventory Sheet -->
+<div class="sheet-overlay" id="overlay-add-inventory-sheet" onclick="closeSheet('add-inventory-sheet')"></div>
+<div class="sheet" id="add-inventory-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Add Inventory Item</div>
+    <button class="icon-btn" style="background: var(--surface-2); color: var(--text-primary);" onclick="closeSheet('add-inventory-sheet')">
+      <span class="material-icons-round">close</span>
+    </button>
+  </div>
+  <div class="sheet-body">
+    <div class="form-group">
+      <label class="form-label">Item Name</label>
+      <input type="text" class="form-control" id="inv-name" placeholder="e.g. Rice, Cooking Oil...">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select class="form-control" id="inv-cat">
+          <option value="Grocery">Grocery</option>
+          <option value="Household">Household</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Unit</label>
+        <select class="form-control" id="inv-unit">
+          <option>kg</option><option>L</option><option>pcs</option><option>pack</option><option>box</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Qty Purchased</label>
+        <input type="number" class="form-control" id="inv-qty-bought" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Qty Remaining</label>
+        <input type="number" class="form-control" id="inv-qty-left" placeholder="0">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Reorder Threshold</label>
+        <input type="number" class="form-control" id="inv-threshold" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cost per Unit (BD)</label>
+        <input type="number" class="form-control" id="inv-cost" placeholder="0.000">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="saveInventoryItem()">
+      <span class="material-icons-round">save</span> Save Item
+    </button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+
+const USERS = [
+  { id: 1, name: 'Mubeen', initials: 'MU', role: 'Admin', color: '#1565C0', bg: '#E3F2FD' },
+  { id: 2, name: 'Hajara', initials: 'HA', role: 'Member', color: '#C62828', bg: '#FCE4EC' },
+  { id: 3, name: 'Afnan', initials: 'AF', role: 'Member', color: '#2E7D32', bg: '#E8F5E9' },
+  { id: 4, name: 'Afraz', initials: 'AZ', role: 'Member', color: '#6A1B9A', bg: '#F3E5F5' },
+];
+
+let currentUser = USERS[0];
+let currentBudgetMonthOffset = 0;
+
+const EXPENSES = [
+  { id: 'E001', date: '2025-06-15', vendor: 'Carrefour', category: 'Groceries', subcategory: 'Supermarket', amount: 42.500, tax: 0, paidBy: 'Mubeen', beneficiary: 'Whole Family', shared: true, notes: 'Weekly groceries', spendType: 'good' },
+  { id: 'E002', date: '2025-06-14', vendor: 'Chilis Restaurant', category: 'Restaurant', subcategory: 'Dining Out', amount: 28.750, tax: 2.150, paidBy: 'Hajara', beneficiary: 'Whole Family', shared: true, notes: 'Family dinner', spendType: 'bad' },
+  { id: 'E003', date: '2025-06-13', vendor: 'BAPCO Fuel Station', category: 'Fuel', subcategory: 'Petrol', amount: 15.000, tax: 0, paidBy: 'Mubeen', beneficiary: 'Mubeen', shared: false, notes: '', spendType: 'good' },
+  { id: 'E004', date: '2025-06-12', vendor: 'Salmaniya Hospital', category: 'Medical', subcategory: 'Consultation', amount: 3.000, tax: 0, paidBy: 'Hajara', beneficiary: 'Hajara', shared: false, notes: 'Doctor visit', spendType: 'good' },
+  { id: 'E005', date: '2025-06-11', vendor: 'LuLu Hypermarket', category: 'Groceries', subcategory: 'Supermarket', amount: 67.300, tax: 0, paidBy: 'Mubeen', beneficiary: 'Whole Family', shared: true, notes: 'Monthly bulk buy', spendType: 'good' },
+  { id: 'E006', date: '2025-06-10', vendor: 'Jawad School', category: 'Education', subcategory: 'Tuition', amount: 75.000, tax: 0, paidBy: 'Mubeen', beneficiary: 'Afnan', shared: false, notes: 'Monthly school fee', spendType: 'good' },
+  { id: 'E007', date: '2025-06-09', vendor: 'Netflix', category: 'Entertainment', subcategory: 'Streaming', amount: 4.500, tax: 0, paidBy: 'Afraz', beneficiary: 'Whole Family', shared: true, notes: '', spendType: 'bad' },
+  { id: 'E008', date: '2025-06-08', vendor: 'H&M Bahrain City', category: 'Shopping', subcategory: 'Clothing', amount: 38.900, tax: 1.945, paidBy: 'Hajara', beneficiary: 'Hajara', shared: false, notes: 'Eid clothes', spendType: 'bad' },
+];
+
+const BUDGETS = [
+  { name: 'Household', allocated: 250, used: 198, color: '#1565C0' },
+  { name: 'Grocery', allocated: 400, used: 310, color: '#2E7D32' },
+  { name: 'Utilities', allocated: 150, used: 89, color: '#00695C' },
+  { name: 'Education', allocated: 200, used: 150, color: '#6A1B9A' },
+  { name: 'Entertainment', allocated: 80, used: 112, color: '#E65100' },
+  { name: 'Maintenance', allocated: 100, used: 23, color: '#C62828' },
+  { name: 'Emergency Fund', allocated: 220, used: 0, color: '#F57F17' },
+];
+
+const INVENTORY_GROCERY = [
+  { name: 'Rice', unit: 'kg', bought: 10, remaining: 7.5, threshold: 2, rate: '2.5kg/month' },
+  { name: 'Flour', unit: 'kg', bought: 5, remaining: 3.8, threshold: 1, rate: '1.2kg/month' },
+  { name: 'Sugar', unit: 'kg', bought: 3, remaining: 2.1, threshold: 0.5, rate: '0.9kg/month' },
+  { name: 'Cooking Oil', unit: 'L', bought: 4, remaining: 0.3, threshold: 1, rate: '1.5L/month' },
+  { name: 'Milk', unit: 'pcs', bought: 12, remaining: 5, threshold: 3, rate: '4pcs/week' },
+  { name: 'Eggs', unit: 'pcs', bought: 30, remaining: 18, threshold: 6, rate: '10pcs/week' },
+];
+
+const INVENTORY_HOUSEHOLD = [
+  { name: 'Detergent', unit: 'pack', bought: 2, remaining: 0.2, threshold: 0.5, rate: '1 pack/month' },
+  { name: 'Soap', unit: 'pcs', bought: 6, remaining: 4, threshold: 1, rate: '1pcs/month' },
+  { name: 'Cleaning Supplies', unit: 'pack', bought: 3, remaining: 2.1, threshold: 1, rate: '0.9 pack/month' },
+];
+
+const NOTIFICATIONS = [
+  { icon: 'warning', color: '#E65100', bg: '#FFF3E0', title: 'Rent Due Soon', desc: 'House rent of BD 200 is due in 5 days (Jun 23)', time: 'Just now', type: 'urgent' },
+  { icon: 'inventory_2', color: '#C62828', bg: '#FFEBEE', title: 'Low Stock: Cooking Oil', desc: 'Only 8% remaining. Needs restock within 3 days.', time: '2 hours ago', type: 'warning' },
+  { icon: 'insights', color: '#1565C0', bg: '#E3F2FD', title: 'Gemini AI Analysis Ready', desc: 'June spending analysis shows 12% savings vs May. Tap to view.', time: '5 hours ago', type: 'info' },
+  { icon: 'account_balance_wallet', color: '#E65100', bg: '#FFF3E0', title: 'Entertainment Budget Exceeded', desc: 'You\'ve spent BD 112 of BD 80 budget (140%).', time: '1 day ago', type: 'warning' },
+  { icon: 'check_circle', color: '#2E7D32', bg: '#E8F5E9', title: 'Grocery Budget on Track', desc: 'Only BD 310 of BD 400 used (77.5%). Great job!', time: '2 days ago', type: 'success' },
+];
+
+const AI_INSIGHTS = [
+  { type: 'good', icon: 'thumb_up', title: 'Grocery spending on track', desc: 'Grocery expenses are 8% below budget (BD 310 of BD 400). Your systematic meal planning is paying off.', impact: '💚 Saving BD 34/month', rec: 'Continue weekly meal planning and bulk buying from LuLu for maximum savings.' },
+  { type: 'bad', icon: 'warning', title: 'Restaurant spending 42% over budget', desc: 'Dining out has cost BD 112 against a BD 80 budget. This is the 3rd consecutive month of overrun.', impact: '🔴 Overspent by BD 67', rec: 'Limit restaurant visits to 2x/month. Consider cooking at home on weekends to save BD 40-60/month.' },
+  { type: 'good', icon: 'thumb_up', title: 'Utility bills under control', desc: 'Electricity and water bills are 15% lower than the same period last year, suggesting improved conservation habits.', impact: '💚 Saving BD 18/month', rec: 'Maintain current habits. Consider smart thermostat to save an additional BD 10/month.' },
+  { type: 'bad', icon: 'trending_down', title: 'Shopping impulse pattern detected', desc: 'H&M purchase of BD 38.9 categorized as impulse buy. Shopping category is up 25% this month.', impact: '🔴 BD 38.9 unplanned', rec: 'Implement a 48-hour rule before non-essential purchases. Set a monthly BD 50 shopping allowance.' },
+  { type: 'neutral', icon: 'auto_graph', title: 'Education spending excellent', desc: 'School fees paid on time every month. No late fees or penalties in 12 months of tracked data.', impact: '✅ BD 75/month consistent', rec: 'Consider annual payment option which may save 5-10% in fee discounts.' },
+];
+
+const CAT_ICONS = {
+  Groceries: { icon: 'shopping_cart', cls: 'cat-groceries' },
+  Restaurant: { icon: 'restaurant', cls: 'cat-restaurant' },
+  Fuel: { icon: 'local_gas_station', cls: 'cat-fuel' },
+  Medical: { icon: 'local_hospital', cls: 'cat-medical' },
+  Education: { icon: 'school', cls: 'cat-education' },
+  Electricity: { icon: 'bolt', cls: 'cat-utilities' },
+  Water: { icon: 'water_drop', cls: 'cat-utilities' },
+  Internet: { icon: 'wifi', cls: 'cat-utilities' },
+  Entertainment: { icon: 'movie', cls: 'cat-entertainment' },
+  Shopping: { icon: 'shopping_bag', cls: 'cat-shopping' },
+};
+
+// GAS Web App URL (from localStorage or empty)
+let GAS_URL = localStorage.getItem('gas_url') || '';
+let isDark = localStorage.getItem('theme') === 'dark';
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (isDark) document.documentElement.setAttribute('data-theme', 'dark');
+  updateThemeIcon();
+
+  const savedUrl = localStorage.getItem('gas_url');
+  if (savedUrl) {
+    GAS_URL = savedUrl;
+    document.getElementById('gas-url').value = savedUrl;
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('exp-date').value = today;
+
+  renderUserSwitcher();
+  renderNotifications();
+  renderAIInsights();
+  renderInflation();
+  renderEditBudgetForm();
+
+  if (GAS_URL) {
+    loadAllDataFromSheets();
+  } else {
+    // No GAS URL yet — use demo data
+    renderRecentExpenses();
+    renderExpenseList();
+    renderBudgets();
+    renderInventory();
+    initChartsWithDemoData();
+  }
+});
+async function gasGet(action) {
+  const res = await fetch(GAS_URL + '?action=' + action);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+async function loadAllDataFromSheets() {
+  showGlobalLoader(true);
+
+  try {
+    // Load all data in parallel
+    const [dashRes, expRes, budRes, invRes, notifRes, recRes] = await Promise.all([
+      gasGet('getDashboard'),
+      gasGet('getExpenses&month=' + (new Date().getMonth() + 1) + '&year=' + new Date().getFullYear()),
+      gasGet('getBudgets&month=' + (new Date().getMonth() + 1) + '&year=' + new Date().getFullYear()),
+      gasGet('getInventory'),
+      gasGet('getNotifications'),
+      gasGet('getRecurring'),
+    ]);
+
+    // Update dashboard metrics
+    if (dashRes.success) {
+      updateDashboardMetrics(dashRes);
+    }
+
+    // Update expenses
+    if (expRes.success && expRes.expenses) {
+      EXPENSES.length = 0;
+      expRes.expenses.forEach(e => EXPENSES.push(normalizeExpense(e)));
+      renderRecentExpenses();
+      renderExpenseList();
+    }
+
+    // Update budgets
+    if (budRes.success && budRes.budgets) {
+      BUDGETS.length = 0;
+      budRes.budgets.forEach(b => BUDGETS.push(normalizeBudget(b)));
+      renderBudgets();
+      renderEditBudgetForm();
+    }
+
+    // Update inventory
+    if (invRes.success && invRes.items) {
+      INVENTORY_GROCERY.length = 0;
+      INVENTORY_HOUSEHOLD.length = 0;
+      invRes.items.forEach(item => {
+        const normalized = normalizeInventoryItem(item);
+        if (normalized.category === 'Household') {
+          INVENTORY_HOUSEHOLD.push(normalized);
+        } else {
+          INVENTORY_GROCERY.push(normalized);
+        }
+      });
+      renderInventory();
+    }
+
+    // Update notifications
+    if (notifRes.success && notifRes.notifications) {
+      NOTIFICATIONS.length = 0;
+      notifRes.notifications.forEach(n => NOTIFICATIONS.push(n));
+      renderNotifications();
+    }
+
+    // Update recurring payments
+    if (recRes.success && recRes.payments) {
+      renderRecurringFromData(recRes.payments);
+    }
+
+    // Load AI insights separately (slower)
+    gasGet('getAIInsights').then(res => {
+  if (res.success && res.insights && res.insights.length > 0) {
+    AI_INSIGHTS.length = 0;
+    res.insights.forEach(i => AI_INSIGHTS.push({
+      type: i['Type'] || i.type || 'neutral',
+      icon: i['Type'] === 'good' ? 'thumb_up' : i['Type'] === 'bad' ? 'warning' : 'auto_graph',
+      title: i['Title'] || i.title || '',
+      desc: i['Description'] || i.desc || '',
+      impact: i['Financial Impact'] || i.impact || '',
+      rec: i['Recommendation'] || i.rec || '',
+    }));
+    renderAIInsights();
+    function renderRecurringFromData(payments) {
+  const container = document.querySelector('.card[style="padding: 0;"]');
+  const today = new Date().getDate();
+
+  const recurringCard = [...document.querySelectorAll('.card')].find(c =>
+    c.querySelector('.recurring-item')
+  );
+  if (!recurringCard) return;
+
+  recurringCard.innerHTML = payments.map(p => {
+    const dueDay = parseInt(p['Due Day'] || p.dueDay) || 0;
+    const amount = parseFloat(p['Amount'] || p.amount) || 0;
+    const name = p['Name'] || p.name || '';
+    const daysLeft = dueDay >= today ? dueDay - today : (30 - today + dueDay);
+    const isSoon = daysLeft <= 7;
+
+    const iconMap = {
+      Rent: 'home', Electricity: 'bolt', Education: 'school',
+      Internet: 'wifi', Entertainment: 'tv', Water: 'water_drop',
+    };
+    const category = p['Category'] || p.category || '';
+    const icon = iconMap[category] || 'payment';
+
+    return `<div class="recurring-item">
+      <div class="recurring-icon"><span class="material-icons-round">${icon}</span></div>
+      <div class="recurring-info">
+        <div class="recurring-name">${name}
+          <span class="due-badge ${isSoon ? 'due-soon' : 'due-ok'}">${daysLeft} days</span>
+        </div>
+        <div class="recurring-due">Due on day ${dueDay} of month</div>
+      </div>
+      <div class="recurring-amt">BD ${amount.toFixed(3)}</div>
+    </div>`;
+  }).join('');
+}
+  }
+}).catch(() => {});
+
+  } catch (err) {
+    showToast('Could not load data from Sheets: ' + err.message, 'error');
+    // Fall back to demo data
+    initChartsWithDemoData();
+  } finally {
+    showGlobalLoader(false);
+    // Initialize charts with fresh data
+    google.charts.load('current', { packages: ['corechart'] });
+    google.charts.setOnLoadCallback(initCharts);
+  }
+}
+function normalizeExpense(e) {
+  return {
+    id: e['Expense ID'] || e.id || '',
+    date: e['Date'] || e.date || '',
+    vendor: e['Vendor'] || e.vendor || '',
+    category: e['Category'] || e.category || '',
+    subcategory: e['Subcategory'] || e.subcategory || '',
+    amount: parseFloat(e['Amount'] || e.amount) || 0,
+    tax: parseFloat(e['Tax'] || e.tax) || 0,
+    paidBy: e['Paid By'] || e.paidBy || '',
+    beneficiary: e['Beneficiary'] || e.beneficiary || '',
+    shared: (e['Shared Expense'] || e.shared) === 'Yes' || e.shared === true,
+    notes: e['Notes'] || e.notes || '',
+    spendType: e['Spend Type'] || e.spendType || 'good',
+  };
+}
+
+function normalizeBudget(b) {
+  return {
+    name: b['Name'] || b.name || '',
+    allocated: parseFloat(b['Allocated'] || b.allocated) || 0,
+    used: parseFloat(b['Used'] || b.used) || 0,
+    color: '#1565C0',
+  };
+}
+
+function normalizeInventoryItem(item) {
+  return {
+    name: item['Item Name'] || item.name || '',
+    category: item['Category'] || item.category || 'Grocery',
+    unit: item['Unit'] || item.unit || 'pcs',
+    bought: parseFloat(item['Quantity Purchased'] || item.quantityPurchased) || 0,
+    remaining: parseFloat(item['Quantity Remaining'] || item.quantityRemaining) || 0,
+    threshold: parseFloat(item['Reorder Threshold'] || item.threshold) || 0,
+    rate: item['Consumption Rate'] || item.rate || 'N/A',
+  };
+}
+function updateDashboardMetrics(data) {
+  // Update health score
+  const score = data.healthScore || 78;
+  document.getElementById('health-score').textContent = score;
+  document.getElementById('score-fill').style.width = score + '%';
+
+  const label = score >= 85 ? 'Excellent' : score >= 65 ? 'Good' : score >= 40 ? 'Warning' : 'Critical';
+  document.getElementById('health-label').textContent = label;
+
+  // Update metric cards — find them by their label text
+  const metricCards = document.querySelectorAll('.metric-card');
+  metricCards.forEach(card => {
+    const label = card.querySelector('.metric-label');
+    const value = card.querySelector('.metric-value');
+    if (!label || !value) return;
+
+    if (label.textContent.includes('Monthly Spend')) {
+      value.textContent = 'BD ' + (data.totalSpend || 0).toFixed(3);
+    }
+    if (label.textContent.includes('Remaining')) {
+      value.textContent = 'BD ' + (data.remaining || 0).toFixed(3);
+    }
+  });
+
+  // Update member spending cards
+  if (data.memberSpending) {
+    document.querySelectorAll('.member-card').forEach(card => {
+      const nameEl = card.querySelector('.member-name');
+      const amountEl = card.querySelector('.member-amount');
+      if (nameEl && amountEl) {
+        const name = nameEl.textContent.trim();
+        if (data.memberSpending[name] !== undefined) {
+          amountEl.textContent = 'BD ' + data.memberSpending[name].toFixed(3);
+        }
+      }
+    });
+  }
+}
+
+// ═══════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════
+
+function toggleTheme() {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : '');
+  localStorage.setItem('theme', isDark ? 'dark' : '');
+  updateThemeIcon();
+}
+function updateThemeIcon() {
+  document.getElementById('theme-icon').textContent = isDark ? 'light_mode' : 'dark_mode';
+}
+function showGlobalLoader(visible) {
+  
+  const el = document.getElementById('global-loader');
+  if (el) el.classList.toggle('visible', visible);
+}
+
+function refreshData() {
+  if (!GAS_URL) {
+    showToast('Connect your GAS URL first', 'error');
+    return;
+  }
+  showToast('Refreshing data...');
+  loadAllDataFromSheets();
+}
+
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+
+const VIEWS = ['dashboard', 'expenses', 'budget', 'inventory', 'analytics'];
+
+function switchView(view, tabEl) {
+  VIEWS.forEach(v => {
+    document.getElementById('view-' + v).classList.remove('active');
+  });
+  document.getElementById('view-' + view).classList.add('active');
+
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+
+  // Update bottom nav
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navMap = { dashboard: 0, expenses: 1, inventory: 3, analytics: 4 };
+  const navItems = document.querySelectorAll('.nav-item');
+  if (navMap[view] !== undefined) navItems[navMap[view]].classList.add('active');
+}
+
+function switchToView(view) {
+  const tabEl = [...document.querySelectorAll('.tab-item')].find(t => t.getAttribute('onclick')?.includes("'" + view + "'"));
+  switchView(view, tabEl);
+}
+
+// ═══════════════════════════════════════════
+// SHEETS
+// ═══════════════════════════════════════════
+
+function openSheet(id) {
+  document.getElementById('overlay-' + id).classList.add('open');
+  document.getElementById(id).classList.add('open');
+}
+function closeSheet(id) {
+  document.getElementById('overlay-' + id).classList.remove('open');
+  document.getElementById(id).classList.remove('open');
+}
+
+// ═══════════════════════════════════════════
+// RENDER FUNCTIONS
+// ═══════════════════════════════════════════
+
+function renderRecentExpenses() {
+  const el = document.getElementById('recent-expenses');
+  el.innerHTML = EXPENSES.slice(0, 5).map(e => expenseHTML(e)).join('');
+}
+
+function renderExpenseList(filter = 'all', search = '') {
+  const el = document.getElementById('expense-list');
+  let list = EXPENSES;
+  if (filter !== 'all') list = list.filter(e => e.category === filter);
+  if (search) list = list.filter(e => e.vendor.toLowerCase().includes(search.toLowerCase()) || e.category.toLowerCase().includes(search.toLowerCase()));
+  el.innerHTML = list.map(e => expenseHTML(e)).join('');
+}
+
+function expenseHTML(e) {
+  const ci = CAT_ICONS[e.category] || { icon: 'receipt', cls: 'cat-default' };
+  return `<div class="expense-item" onclick="viewExpenseDetail('${e.id}')">
+    <div class="expense-icon ${ci.cls}"><span class="material-icons-round">${ci.icon}</span></div>
+    <div class="expense-details">
+      <div class="expense-vendor">${e.vendor}</div>
+      <div class="expense-meta">${e.category} · ${formatDate(e.date)}${e.shared ? ' · 👨‍👩‍👧‍👦' : ''}</div>
+    </div>
+    <div class="expense-right">
+      <div class="expense-amount">BD ${e.amount.toFixed(3)}</div>
+      <div class="expense-paidby">${e.paidBy}</div>
+      <div style="font-size: 10px; margin-top: 2px; font-weight: 700; color: ${e.spendType === 'good' ? 'var(--success)' : 'var(--danger)'};">${e.spendType === 'good' ? '✓ Good' : '⚠ Bad'}</div>
+    </div>
+  </div>`;
+}
+
+function formatDate(d) {
+  const dt = new Date(d);
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function filterCat(el, cat) {
+  document.querySelectorAll('.chips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderExpenseList(cat);
+}
+
+function filterExpenses(val) {
+  renderExpenseList('all', val);
+}
+
+function renderBudgets() {
+  const el = document.getElementById('budget-list');
+  el.innerHTML = BUDGETS.map(b => {
+    const pct = Math.round((b.used / b.allocated) * 100);
+    const cls = pct >= 100 ? 'danger' : pct >= 80 ? 'warn' : 'safe';
+    return `<div class="budget-item">
+      <div class="budget-header">
+        <div class="budget-name">${b.name}</div>
+        <div class="budget-amounts">BD ${b.used.toFixed(0)} / BD ${b.allocated.toFixed(0)} (${pct}%)</div>
+      </div>
+      <div class="budget-bar"><div class="budget-fill ${cls}" style="width: ${Math.min(pct, 100)}%;"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderEditBudgetForm() {
+  const el = document.getElementById('edit-budget-body');
+  el.innerHTML = BUDGETS.map((b, i) => `
+    <div class="form-group">
+      <label class="form-label">${b.name} Budget (BD)</label>
+      <input type="number" class="form-control" value="${b.allocated}" onchange="updateBudget(${i}, this.value)">
+    </div>
+  `).join('') + `<button class="btn btn-primary" onclick="closeSheet('edit-budget-sheet'); renderBudgets()"><span class="material-icons-round">save</span> Save Budgets</button>`;
+}
+
+function updateBudget(i, val) {
+  BUDGETS[i].allocated = parseFloat(val) || 0;
+}
+
+function renderInventory() {
+  const renderInvList = (items, elId) => {
+    document.getElementById(elId).innerHTML = items.map(item => {
+      const pct = Math.round((item.remaining / item.bought) * 100);
+      const fillColor = pct <= 15 ? '#F44336' : pct <= 40 ? '#FF9800' : '#4CAF50';
+      const days = Math.round((item.remaining / item.bought) * 30);
+      return `<div class="inventory-item">
+        <div class="inv-info">
+          <div class="inv-name">${item.name}</div>
+          <div class="inv-qty">${item.remaining} ${item.unit} left · ~${days} days · ${item.rate}</div>
+        </div>
+        <div class="inv-bar-wrap">
+          <div class="inv-pct" style="color: ${fillColor};">${pct}%</div>
+          <div class="inv-bar"><div class="inv-fill" style="width:${pct}%; background: ${fillColor};"></div></div>
+        </div>
+      </div>`;
+    }).join('');
+  };
+  renderInvList(INVENTORY_GROCERY, 'inventory-grocery');
+  renderInvList(INVENTORY_HOUSEHOLD, 'inventory-household');
+}
+
+function renderNotifications() {
+  document.getElementById('notif-list').innerHTML = NOTIFICATIONS.map(n => `
+    <div class="notif-item">
+      <div class="notif-icon" style="background: ${n.bg};">
+        <span class="material-icons-round" style="color: ${n.color};">${n.icon}</span>
+      </div>
+      <div class="notif-text">
+        <div class="notif-title">${n.title}</div>
+        <div class="notif-desc">${n.desc}</div>
+        <div class="notif-time">${n.time}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderUserSwitcher() {
+  document.getElementById('user-switcher').innerHTML = USERS.map(u => `
+    <div style="display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer;" onclick="switchUser(${u.id})">
+      <div style="width: 36px; height: 36px; border-radius: 50%; background: ${u.bg}; color: ${u.color}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700;">${u.initials}</div>
+      <div style="flex: 1;">
+        <div style="font-size: 14px; font-weight: 600;">${u.name}</div>
+        <div style="font-size: 12px; color: var(--text-muted);">${u.role}</div>
+      </div>
+      ${u.id === currentUser.id ? '<span class="material-icons-round" style="color: var(--blue-600);">check_circle</span>' : ''}
+    </div>
+  `).join('');
+}
+
+function renderAIInsights() {
+  const html = AI_INSIGHTS.map(ins => `
+    <div class="insight-card insight-${ins.type}" style="margin-bottom: 12px;">
+      <div class="insight-header">
+        <span class="material-icons-round" style="font-size: 18px; color: ${ins.type === 'good' ? 'var(--success)' : ins.type === 'bad' ? 'var(--danger)' : 'var(--blue-600)'};">${ins.icon}</span>
+        <span class="insight-type" style="color: ${ins.type === 'good' ? 'var(--success)' : ins.type === 'bad' ? 'var(--danger)' : 'var(--blue-600)'};">${ins.type.toUpperCase()} SPEND</span>
+      </div>
+      <div class="insight-title">${ins.title}</div>
+      <div class="insight-desc">${ins.desc}</div>
+      <div class="insight-impact" style="color: ${ins.type === 'good' ? 'var(--success)' : 'var(--danger)'};">${ins.impact}</div>
+      <div style="margin-top: 8px; font-size: 12px; color: var(--text-secondary); background: rgba(0,0,0,0.04); padding: 8px; border-radius: 6px;">💡 ${ins.rec}</div>
+    </div>
+  `).join('');
+  document.getElementById('ai-insights-list').innerHTML = html;
+  document.getElementById('ai-full-insights').innerHTML = html;
+}
+
+function renderInflation() {
+  const categories = [
+    { name: 'Groceries', change: -3.2, color: 'var(--success)' },
+    { name: 'Restaurant', change: +18.5, color: 'var(--danger)' },
+    { name: 'Fuel', change: +2.1, color: 'var(--warning)' },
+    { name: 'Medical', change: -1.5, color: 'var(--success)' },
+    { name: 'Shopping', change: +25.3, color: 'var(--danger)' },
+    { name: 'Entertainment', change: +12.0, color: 'var(--danger)' },
+  ];
+  document.getElementById('inflation-list').innerHTML = categories.map(c => `
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border);">
+      <span style="font-size: 14px; color: var(--text-primary);">${c.name}</span>
+      <span style="font-size: 14px; font-weight: 700; color: ${c.color};">${c.change > 0 ? '+' : ''}${c.change.toFixed(1)}%</span>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════
+// USER ACTIONS
+// ═══════════════════════════════════════════
+
+function switchUser(id) {
+  currentUser = USERS.find(u => u.id === id);
+  document.getElementById('current-user-name').textContent = currentUser.name;
+  renderUserSwitcher();
+  closeSheet('profile-sheet');
+}
+
+function saveGasUrl() {
+  GAS_URL = document.getElementById('gas-url').value;
+  localStorage.setItem('gas_url', GAS_URL);
+  showToast('Configuration saved!');
+  closeSheet('profile-sheet');
+}
+
+function changeBudgetMonth(offset) {
+  currentBudgetMonthOffset += offset;
+  const d = new Date();
+  d.setMonth(d.getMonth() + currentBudgetMonthOffset);
+  document.getElementById('budget-month-label').textContent = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function toggleRollover(el) {
+  showToast(el.checked ? 'Rollover enabled' : 'Rollover disabled');
+}
+
+// ═══════════════════════════════════════════
+// EXPENSE FORM
+// ═══════════════════════════════════════════
+
+const SUBCATS = {
+  Groceries: ['Supermarket', 'Fresh Produce', 'Bakery', 'Dairy'],
+  Electricity: ['MEWA', 'EWA'],
+  Water: ['EWA', 'Bottled Water'],
+  Internet: ['Batelco', 'STC', 'Zain'],
+  Rent: ['Monthly Rent', 'Advance Deposit'],
+  'School Fees': ['Tuition', 'Books', 'Uniform', 'Activity'],
+  Fuel: ['Petrol', 'Diesel'],
+  Medical: ['Consultation', 'Medicine', 'Lab Tests', 'Dental'],
+  Insurance: ['Health', 'Car', 'Home'],
+  'Home Maintenance': ['Repairs', 'Cleaning', 'Appliances'],
+  Restaurant: ['Dining Out', 'Takeaway', 'Coffee Shop'],
+  Entertainment: ['Streaming', 'Cinema', 'Events'],
+  Shopping: ['Clothing', 'Electronics', 'Personal Care'],
+  Travel: ['Flights', 'Hotels', 'Activities'],
+  Subscriptions: ['Apps', 'Services', 'Memberships'],
+  Outings: ['Parks', 'Family Activities'],
+  Gifts: ['Birthday', 'Occasions'],
+};
+
+function updateSubcat() {
+  const cat = document.getElementById('exp-cat').value;
+  const subcatEl = document.getElementById('exp-subcat');
+  const subs = SUBCATS[cat] || [];
+  subcatEl.innerHTML = subs.length ? subs.map(s => `<option>${s}</option>`).join('') : '<option>General</option>';
+}
+
+function showAddTab(tab) {
+  document.getElementById('add-manual').style.display = tab === 'manual' ? 'block' : 'none';
+  document.getElementById('add-ocr').style.display = tab === 'ocr' ? 'block' : 'none';
+  document.getElementById('tab-manual').className = tab === 'manual' ? 'btn btn-primary' : 'btn btn-secondary';
+  document.getElementById('tab-ocr').className = tab === 'ocr' ? 'btn btn-primary' : 'btn btn-secondary';
+  document.getElementById('tab-manual').style.flex = '1';
+  document.getElementById('tab-ocr').style.flex = '1';
+  document.getElementById('tab-manual').style.padding = '10px';
+  document.getElementById('tab-ocr').style.padding = '10px';
+  document.getElementById('tab-manual').style.fontSize = '13px';
+  document.getElementById('tab-ocr').style.fontSize = '13px';
+}
+
+function saveExpense() {
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  if (!amount || !document.getElementById('exp-vendor').value || !document.getElementById('exp-cat').value) {
+    showToast('Please fill required fields', 'error');
+    return;
+  }
+  const newExp = {
+    id: 'E' + (EXPENSES.length + 1).toString().padStart(3, '0'),
+    date: document.getElementById('exp-date').value,
+    vendor: document.getElementById('exp-vendor').value,
+    category: document.getElementById('exp-cat').value,
+    subcategory: document.getElementById('exp-subcat').value,
+    amount: amount,
+    tax: parseFloat(document.getElementById('exp-tax').value) || 0,
+    paidBy: document.getElementById('exp-paidby').value,
+    beneficiary: document.getElementById('exp-beneficiary').value,
+    shared: document.getElementById('exp-shared').checked,
+    notes: document.getElementById('exp-notes').value,
+    spendType: classifySpend(document.getElementById('exp-cat').value, amount),
+  };
+  EXPENSES.unshift(newExp);
+
+  // Update budget
+  const budgetMap = { Groceries: 'Grocery', Electricity: 'Utilities', Water: 'Utilities', Internet: 'Utilities', Entertainment: 'Entertainment', 'School Fees': 'Education' };
+  const budgetName = budgetMap[newExp.category];
+  if (budgetName) {
+    const budg = BUDGETS.find(b => b.name === budgetName);
+    if (budg) budg.used += newExp.amount;
+  }
+
+  renderRecentExpenses();
+  renderExpenseList();
+  renderBudgets();
+  closeSheet('add-expense-sheet');
+  showToast('Expense saved! ✅');
+
+  // Sync to Google Sheets
+  if (GAS_URL) syncToSheets('addExpense', newExp);
+}
+
+function classifySpend(cat, amt) {
+  const necessities = ['Groceries', 'Electricity', 'Water', 'Internet', 'Rent', 'School Fees', 'Fuel', 'Medical', 'Insurance', 'Home Maintenance'];
+  if (necessities.includes(cat)) return 'good';
+  if (['Restaurant', 'Entertainment', 'Shopping', 'Outings', 'Gifts'].includes(cat)) return 'bad';
+  return 'good';
+}
+
+function viewExpenseDetail(id) {
+  const exp = EXPENSES.find(e => e.id === id);
+  if (!exp) return;
+  showToast(`${exp.vendor} — BD ${exp.amount.toFixed(3)}`);
+}
+
+// ═══════════════════════════════════════════
+// OCR / RECEIPT
+// ═══════════════════════════════════════════
+
+function triggerFileUpload() {
+  document.getElementById('file-input').click();
+}
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (file) processReceipt(file);
+}
+
+function handleDrop(event) {
+  event.preventDefault();
+  document.getElementById('upload-zone').classList.remove('dragover');
+  const file = event.dataTransfer.files[0];
+  if (file) processReceipt(file);
+}
+
+function processReceipt(file) {
+  document.getElementById('upload-zone').style.display = 'none';
+  document.getElementById('ocr-processing').style.display = 'block';
+  document.getElementById('ocr-result-section').style.display = 'none';
+
+  if (!GAS_URL) {
+    showToast('Please set your GAS URL in account settings first', 'error');
+    document.getElementById('ocr-processing').style.display = 'none';
+    document.getElementById('upload-zone').style.display = 'block';
+    return;
+  }
+
+  compressImage(file, 1200, 0.8, function(base64, mimeType) {
+    sendToOCR(base64, mimeType);
+  });
+}
+
+function compressImage(file, maxWidth, quality, callback) {
+  const reader = new FileReader();
+
+  reader.onerror = function() {
+    showToast('Could not read image file', 'error');
+    document.getElementById('ocr-processing').style.display = 'none';
+    document.getElementById('upload-zone').style.display = 'block';
+  };
+
+  reader.onload = function(e) {
+    const img = new Image();
+
+    img.onerror = function() {
+      showToast('Could not load image', 'error');
+      document.getElementById('ocr-processing').style.display = 'none';
+      document.getElementById('upload-zone').style.display = 'block';
+    };
+
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const compressed = canvas.toDataURL('image/jpeg', quality);
+      const base64 = compressed.split(',')[1];
+      callback(base64, 'image/jpeg');
+    };
+
+    img.src = e.target.result;
+  };
+
+  reader.readAsDataURL(file);
+}
+
+function sendToOCR(base64, mimeType) {
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', GAS_URL, true);
+  xhr.setRequestHeader('Content-Type', 'text/plain');
+
+  xhr.onload = function() {
+    try {
+      const data = JSON.parse(xhr.responseText);
+      if (!data.success) throw new Error(data.error || 'OCR processing failed');
+      showOCRResult(data);
+    } catch (err) {
+      document.getElementById('ocr-processing').style.display = 'none';
+      document.getElementById('upload-zone').style.display = 'block';
+      showToast('OCR failed: ' + err.message, 'error');
+    }
+  };
+
+  xhr.onerror = function() {
+    document.getElementById('ocr-processing').style.display = 'none';
+    document.getElementById('upload-zone').style.display = 'block';
+    showToast('Network error — check your internet connection', 'error');
+  };
+
+  xhr.ontimeout = function() {
+    document.getElementById('ocr-processing').style.display = 'none';
+    document.getElementById('upload-zone').style.display = 'block';
+    showToast('Request timed out — try a clearer photo', 'error');
+  };
+
+  xhr.timeout = 60000;
+
+  xhr.send(JSON.stringify({
+    action: 'processOCR',
+    imageData: base64,
+    mimeType: mimeType,
+  }));
+}
+
+function showOCRResult(data) {
+  document.getElementById('ocr-processing').style.display = 'none';
+  document.getElementById('upload-zone').style.display = 'none';
+  document.getElementById('ocr-result-section').style.display = 'block';
+
+  document.getElementById('ocr-vendor').value = data.vendor || '';
+  document.getElementById('ocr-date').value = data.date || new Date().toISOString().split('T')[0];
+  document.getElementById('ocr-amount').value = data.amount || '';
+  document.getElementById('ocr-tax').value = data.tax || '';
+  document.getElementById('ocr-items').value = data.items || '';
+  document.getElementById('ocr-confidence').textContent = (data.confidence || 0) + '%';
+
+  const catEl = document.getElementById('ocr-cat');
+  if (data.category) {
+    const match = [...catEl.options].find(o => o.value === data.category);
+    if (match) catEl.value = data.category;
+  }
+
+  const confidence = parseInt(data.confidence) || 0;
+  const badge = document.querySelector('.ocr-badge');
+  if (badge) {
+    badge.className = 'ocr-badge ' + (confidence >= 80 ? 'badge-success' : confidence >= 60 ? 'badge-warning' : 'badge-danger');
+  }
+}
+
+
+function saveOCRExpense() {
+  const newExp = {
+    id: 'E' + (EXPENSES.length + 1).toString().padStart(3, '0'),
+    date: document.getElementById('ocr-date').value,
+    vendor: document.getElementById('ocr-vendor').value,
+    category: document.getElementById('ocr-cat').value,
+    subcategory: 'OCR Import',
+    amount: parseFloat(document.getElementById('ocr-amount').value) || 0,
+    tax: parseFloat(document.getElementById('ocr-tax').value) || 0,
+    paidBy: document.getElementById('ocr-paidby').value,
+    beneficiary: 'Whole Family',
+    shared: true,
+    notes: 'Imported via OCR',
+    spendType: classifySpend(document.getElementById('ocr-cat').value, parseFloat(document.getElementById('ocr-amount').value)),
+    ocrConfidence: parseInt(document.getElementById('ocr-confidence').textContent),
+  };
+  EXPENSES.unshift(newExp);
+  renderRecentExpenses();
+  renderExpenseList();
+  closeSheet('add-expense-sheet');
+  showToast('Receipt saved! ✅');
+  if (GAS_URL) syncToSheets('addExpense', newExp);
+}
+
+// ═══════════════════════════════════════════
+// INVENTORY
+// ═══════════════════════════════════════════
+
+function filterInv(el, cat) {
+  document.querySelectorAll('.chips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function saveInventoryItem() {
+  const item = {
+    name: document.getElementById('inv-name').value,
+    unit: document.getElementById('inv-unit').value,
+    bought: parseFloat(document.getElementById('inv-qty-bought').value) || 0,
+    remaining: parseFloat(document.getElementById('inv-qty-left').value) || 0,
+    threshold: parseFloat(document.getElementById('inv-threshold').value) || 0,
+    rate: 'N/A',
+  };
+  if (!item.name) { showToast('Please enter item name', 'error'); return; }
+  const cat = document.getElementById('inv-cat').value;
+  if (cat === 'Grocery') INVENTORY_GROCERY.push(item);
+  else INVENTORY_HOUSEHOLD.push(item);
+  renderInventory();
+  closeSheet('add-inventory-sheet');
+  showToast('Item added! ✅');
+}
+
+// ═══════════════════════════════════════════
+// GOOGLE SHEETS SYNC
+// ═══════════════════════════════════════════
+
+async function syncToSheets(action, data) {
+  if (!GAS_URL) return;
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action, data }),
+    });
+  } catch (e) {
+    console.warn('Sync failed:', e);
+  }
+}
+
+// ═══════════════════════════════════════════
+// CHARTS (Google Charts)
+// ═══════════════════════════════════════════
+
+function initCharts() {
+  drawTrendChart();
+  drawCategoryChart();
+  drawBudgetHistChart();
+  drawConsumptionChart();
+  drawGoodBadChart();
+  drawMemberChart();
+  drawForecastChart();
+}
+
+function getChartTheme() {
+  const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+  return {
+    textColor: isDarkMode ? '#94A3B8' : '#4A5568',
+    bgColor: isDarkMode ? '#0F1923' : 'transparent',
+    gridColor: isDarkMode ? '#1C2940' : '#EEF3FC',
+  };
+}
+
+function drawTrendChart() {
+  const data = google.visualization.arrayToDataTable([
+    ['Month', 'Expenses', 'Budget'],
+    ['Jan', 1020, 1400], ['Feb', 980, 1400], ['Mar', 1150, 1400],
+    ['Apr', 890, 1400], ['May', 960, 1400], ['Jun', 847, 1400],
+  ]);
+  const t = getChartTheme();
+  const options = {
+    legend: { position: 'top', textStyle: { color: t.textColor, fontSize: 11 } },
+    colors: ['#1565C0', '#90CAF9'],
+    backgroundColor: t.bgColor,
+    chartArea: { left: 40, right: 10, top: 30, bottom: 30 },
+    hAxis: { textStyle: { color: t.textColor, fontSize: 10 }, gridlines: { color: t.gridColor } },
+    vAxis: { textStyle: { color: t.textColor, fontSize: 10 }, gridlines: { color: t.gridColor } },
+    series: { 0: { type: 'bars' }, 1: { type: 'line', lineWidth: 2, pointSize: 4 } },
+    seriesType: 'bars',
+    height: 180,
+  };
+  const chart = new google.visualization.ComboChart(document.getElementById('trendChart'));
+  chart.draw(data, options);
+}
+
+function drawCategoryChart() {
+  const data = google.visualization.arrayToDataTable([
+    ['Category', 'Amount'],
+    ['Groceries', 310],
+    ['Restaurant', 112],
+    ['Education', 150],
+    ['Fuel', 45],
+    ['Medical', 30],
+    ['Entertainment', 45],
+    ['Shopping', 85],
+    ['Other', 70],
+  ]);
+  const t = getChartTheme();
+  const options = {
+    legend: 'none',
+    pieHole: 0.45,
+    colors: ['#1565C0','#E65100','#6A1B9A','#00695C','#C62828','#F57F17','#4527A0','#455A64'],
+    backgroundColor: t.bgColor,
+    chartArea: { left: 10, right: 10, top: 10, bottom: 10 },
+    height: 200,
+    sliceVisibilityThreshold: 0,
+    pieSliceBorderColor: t.bgColor,
+  };
+  const chart = new google.visualization.PieChart(document.getElementById('catChart'));
+  chart.draw(data, options);
+
+  // Manual legend
+  const cats = [
+    ['Groceries', '#1565C0', 'BD 310 (36.6%)'],
+    ['Restaurant', '#E65100', 'BD 112 (13.2%)'],
+    ['Education', '#6A1B9A', 'BD 150 (17.7%)'],
+    ['Fuel', '#00695C', 'BD 45 (5.3%)'],
+    ['Medical', '#C62828', 'BD 30 (3.5%)'],
+    ['Entertainment', '#F57F17', 'BD 45 (5.3%)'],
+    ['Shopping', '#4527A0', 'BD 85 (10%)'],
+    ['Other', '#455A64', 'BD 70 (8.3%)'],
+  ];
+  document.getElementById('cat-legend').innerHTML = cats.map(([name, color, val]) =>
+    `<div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:2px;background:${color};flex-shrink:0;"></div><span style="color:var(--text-secondary);">${name} ${val}</span></div>`
+  ).join('');
+}
+
+function drawBudgetHistChart() {
+  const data = google.visualization.arrayToDataTable([
+    ['Month', 'Used', 'Allocated'],
+    ['Jan', 1020, 1400], ['Feb', 980, 1400], ['Mar', 1150, 1400],
+    ['Apr', 890, 1400], ['May', 960, 1400], ['Jun', 847, 1400],
+  ]);
+  const t = getChartTheme();
+  new google.visualization.ColumnChart(document.getElementById('budgetHistChart')).draw(data, {
+    legend: { position: 'top', textStyle: { color: t.textColor, fontSize: 10 } },
+    colors: ['#1565C0', '#BBDEFB'],
+    backgroundColor: t.bgColor,
+    chartArea: { left: 40, right: 10, top: 24, bottom: 30 },
+    hAxis: { textStyle: { color: t.textColor, fontSize: 10 }, gridlines: { color: 'transparent' } },
+    vAxis: { textStyle: { color: t.textColor, fontSize: 10 }, gridlines: { color: t.gridColor } },
+    height: 160,
+  });
+}
+
+function drawConsumptionChart() {
+  const data = google.visualization.arrayToDataTable([
+    ['Item', 'Consumed %', 'Remaining %'],
+    ['Rice', 25, 75], ['Flour', 24, 76], ['Sugar', 30, 70],
+    ['Oil', 92, 8], ['Milk', 58, 42], ['Eggs', 40, 60],
+  ]);
+  const t = getChartTheme();
+  new google.visualization.BarChart(document.getElementById('consumptionChart')).draw(data, {
+    isStacked: true,
+    legend: { position: 'top', textStyle: { color: t.textColor, fontSize: 10 } },
+    colors: ['#1565C0', '#E3F2FD'],
+    backgroundColor: t.bgColor,
+    chartArea: { left: 70, right: 10, top: 24, bottom: 10 },
+    hAxis: { textStyle: { color: t.textColor, fontSize: 10 }, maxValue: 100, gridlines: { color: t.gridColor } },
+    vAxis: { textStyle: { color: t.textColor, fontSize: 10 } },
+    height: 200,
+  });
+}
+
+function drawGoodBadChart() {
+  const data = google.visualization.arrayToDataTable([
+    ['Month', 'Good Spend', 'Bad Spend'],
+    ['Feb', 720, 260], ['Mar', 890, 260], ['Apr', 650, 240],
+    ['May', 700, 260], ['Jun', 612, 235],
+  ]);
+  const t = getChartTheme();
+  new google.visualization.ColumnChart(document.getElementById('goodBadChart')).draw(data, {
+    isStacked: true,
+    legend: { position: 'top', textStyle: { color: t.textColor, fontSize: 10 } },
+    colors: ['#2E7D32', '#C62828'],
+    backgroundColor: t.bgColor,
+    chartArea: { left: 40, right: 10, top: 24, bottom: 30 },
+    hAxis: { textStyle: { color: t.textColor, fontSize: 10 } },
+    vAxis: { textStyle: { color: t.textColor, fontSize: 10 }, gridlines: { color: t.gridColor } },
+    height: 180,
+  });
+}
+
+function drawMemberChart() {
+  const data = google.visualization.arrayToDataTable([
+    ['Member', 'Spending', { role: 'style' }],
+    ['Mubeen', 312, '#1565C0'],
+    ['Hajara', 248, '#C62828'],
+    ['Afnan', 187, '#2E7D32'],
+    ['Afraz', 100, '#6A1B9A'],
+  ]);
+  const t = getChartTheme();
+  new google.visualization.BarChart(document.getElementById('memberChart')).draw(data, {
+    legend: 'none',
+    backgroundColor: t.bgColor,
+    chartArea: { left: 70, right: 60, top: 10, bottom: 10 },
+    hAxis: { textStyle: { color: t.textColor, fontSize: 10 }, gridlines: { color: t.gridColor } },
+    vAxis: { textStyle: { color: t.textColor, fontSize: 10 } },
+    height: 180,
+  });
+}
+
+function drawForecastChart() {
+  const data = google.visualization.arrayToDataTable([
+    ['Month', 'Actual', 'Forecast'],
+    ['Apr', 890, null], ['May', 960, null], ['Jun', 847, null],
+    ['Jul', null, 920], ['Aug', null, 890], ['Sep', null, 870],
+  ]);
+  const t = getChartTheme();
+  new google.visualization.LineChart(document.getElementById('forecastChart')).draw(data, {
+    legend: { position: 'top', textStyle: { color: t.textColor, fontSize: 10 } },
+    colors: ['#1565C0', '#90CAF9'],
+    backgroundColor: t.bgColor,
+    chartArea: { left: 40, right: 10, top: 24, bottom: 30 },
+    hAxis: { textStyle: { color: t.textColor, fontSize: 10 } },
+    vAxis: { textStyle: { color: t.textColor, fontSize: 10 }, gridlines: { color: t.gridColor } },
+    series: { 1: { lineDashStyle: [4, 4] } },
+    height: 160,
+    pointSize: 5,
+  });
+}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+
+let toastTimer;
+function showToast(msg, type = 'success') {
+  let toast = document.getElementById('app-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'app-toast';
+    toast.style.cssText = `position:fixed;bottom:96px;left:50%;transform:translateX(-50%);background:${type === 'error' ? 'var(--danger)' : '#1565C0'};color:white;padding:10px 20px;border-radius:24px;font-size:14px;font-weight:600;z-index:999;box-shadow:0 4px 12px rgba(0,0,0,0.3);transition:opacity 0.3s;white-space:nowrap;`;
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.background = type === 'error' ? 'var(--danger)' : '#1565C0';
+  toast.style.opacity = '1';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 2800);
+}
+
+// ═══════════════════════════════════════════
+// PWA Service Worker Registration
+// ═══════════════════════════════════════════
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
