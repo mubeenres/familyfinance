@@ -424,6 +424,18 @@ select.form-control{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:
       </div>
       <div class="form-group"><label class="form-label">Vendor / Description</label><input type="text" class="form-control" id="exp-vendor" placeholder="e.g. Carrefour, BAPCO..."></div>
       <div class="form-row">
+        <div class="form-group"><label class="form-label">Primary Category</label>
+          <select class="form-control" id="exp-primary-cat" onchange="updateExpSubcat()">
+            <option value="">Select...</option>
+            <optgroup label="Necessities"><option>Groceries</option><option>Electricity</option><option>Water</option><option>Internet</option><option>Rent</option><option>School Fees</option><option>Fuel</option><option>Medical</option><option>Insurance</option><option>Home Maintenance</option></optgroup>
+            <optgroup label="Lifestyle"><option>Restaurant</option><option>Entertainment</option><option>Shopping</option><option>Travel</option><option>Subscriptions</option><option>Outings</option><option>Gifts</option></optgroup>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Subcategory</label>
+          <select class="form-control" id="exp-subcat"><option value="">Select category first</option></select>
+        </div>
+      </div>
+      <div class="form-row">
         <div class="form-group"><label class="form-label">Paid From Account</label><select class="form-control" id="exp-account"><option value="">Select account...</option></select></div>
         <div class="form-group"><label class="form-label">Paid By</label><select class="form-control" id="exp-paidby"><option>Mubeen</option><option>Hajara</option><option>Afnan</option><option>Afraz</option></select></div>
       </div>
@@ -1221,7 +1233,7 @@ function saveExpense(){
     if(catEl&&catEl.value&&amtEl&&amtEl.value)splits.push({category:catEl.value,member:memEl?memEl.value:'Whole Family',amount:parseFloat(amtEl.value)||0});
   }
   const now=new Date();
-  const primaryCat=splits.length?splits[0].category||'Groceries':'Groceries';
+  const primaryCat=(document.getElementById('exp-primary-cat')?.value)||splits[0]?.category||'Groceries';
   const exp={id:'E'+Date.now(),date:document.getElementById('exp-date').value,vendor,category:primaryCat,amount,amountBD:amount,currency:document.getElementById('exp-currency').value,tax:parseFloat(document.getElementById('exp-tax').value)||0,paidBy:document.getElementById('exp-paidby').value,account:document.getElementById('exp-account').value,notes:document.getElementById('exp-notes').value,shared:true,spendType:classifySpend(primaryCat),txnType:'expense',splits,month:now.getMonth()+1,year:now.getFullYear()};
   TRANSACTIONS.unshift(exp);
   const bm={'Groceries':'Grocery','Entertainment':'Entertainment','School Fees':'Education','Electricity':'Utilities','Water':'Utilities','Internet':'Utilities'};
@@ -1229,6 +1241,40 @@ function saveExpense(){
   renderRecentTxns();renderTxnList();updateTxnSummary();renderBudgets();
   gasPost('addExpense',exp);closeSheet('add-txn-sheet');showToast('Expense saved ✅');
 }
+
+const SUBCATS = {
+  Groceries:['Supermarket','Fresh Produce','Bakery','Dairy','Frozen Foods'],
+  Electricity:['EWA','Prepaid Meter'],
+  Water:['EWA','Bottled Water','Water Tanker'],
+  Internet:['Batelco','STC','Zain'],
+  Rent:['Monthly Rent','Advance Deposit'],
+  'School Fees':['Tuition','Books','Uniform','Activity Fee','Transport'],
+  Fuel:['Petrol','Diesel'],
+  Medical:['Consultation','Medicine','Lab Tests','Dental','Optical'],
+  Insurance:['Health','Car','Home','Life'],
+  'Home Maintenance':['Repairs','Cleaning','Appliances','Plumbing','Electrical'],
+  Restaurant:['Dining Out','Takeaway','Coffee Shop','Fast Food'],
+  Entertainment:['Streaming','Cinema','Events','Sports'],
+  Shopping:['Clothing','Electronics','Personal Care','Accessories'],
+  Travel:['Flights','Hotels','Activities','Visa'],
+  Subscriptions:['Apps','Services','Memberships','Cloud Storage'],
+  Outings:['Parks','Family Activities','Recreation'],
+  Gifts:['Birthday','Occasions','Charity'],
+};
+
+function updateExpSubcat() {
+  const cat = document.getElementById('exp-primary-cat')?.value || '';
+  const el  = document.getElementById('exp-subcat');
+  if (!el) return;
+  const subs = SUBCATS[cat] || [];
+  el.innerHTML = subs.length
+    ? subs.map(s => '<option>' + s + '</option>').join('')
+    : '<option>General</option>';
+  // Also update split line 0 category
+  const sc0 = document.getElementById('split-cat-0');
+  if (sc0 && cat) sc0.value = cat;
+}
+
 function saveIncome(){
   const amount=parseFloat(document.getElementById('inc-amount').value)||0,source=document.getElementById('inc-source').value.trim();
   if(!amount||!source){showToast('Fill amount and source','error');return;}
@@ -1444,19 +1490,22 @@ function saveGasUrl(){
 // ═══════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════
-function switchView(view,tabEl){
-  VIEWS.forEach(v=>{const el=document.getElementById('view-'+v);if(el)el.classList.remove('active');});
-  const vEl=document.getElementById('view-'+view);if(vEl)vEl.classList.add('active');
-  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
-  if(tabEl)tabEl.classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  const nm={dashboard:0,transactions:1,inventory:3,analytics:4};
-  const ni=document.querySelectorAll('.nav-item');
-  if(nm[view]!==undefined)ni[nm[view]].classList.add('active');
-  if(view==='analytics'){buildInflation();setTimeout(initCharts,100);}
-  if(view==='networth')setTimeout(drawNWChart,100);
+function switchView(view, tabEl) {
+  VIEWS.forEach(v => { const e = document.getElementById('view-' + v); if (e) e.classList.remove('active'); });
+  const ve = document.getElementById('view-' + view); if (ve) ve.classList.add('active');
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const nm = {dashboard:0, transactions:1, inventory:3, analytics:4};
+  const ni = document.querySelectorAll('.nav-item');
+  if (nm[view] !== undefined) ni[nm[view]].classList.add('active');
+  if (GAS_URL) { loadModule(view, false); }
 }
-function switchToView(view){const t=[...document.querySelectorAll('.tab-item')].find(t=>t.getAttribute('onclick')?.includes("'"+view+"'"));switchView(view,t);}
+function switchToView(view) {
+  const tabEl = [...document.querySelectorAll('.tab-item')]
+    .find(t => (t.getAttribute('onclick') || '').includes("'" + view + "'"));
+  switchView(view, tabEl);
+}
 function openSheet(id){const o=document.getElementById('overlay-'+id),s=document.getElementById(id);if(o)o.classList.add('open');if(s)s.classList.add('open');}
 function closeSheet(id){const o=document.getElementById('overlay-'+id),s=document.getElementById(id);if(o)o.classList.remove('open');if(s)s.classList.remove('open');}
 
@@ -1893,11 +1942,7 @@ async function loadAnalytics(fresh) {
 }
 
 // ── OVERRIDE switchView to trigger lazy loading ───────────────────
-const _baseSwitchView = switchView;
-function switchView(view, tabEl) {
-  _baseSwitchView(view, tabEl);
-  if (GAS_URL) loadModule(view);
-}
+
 
 // ── INIT — only load dashboard on startup ─────────────────────────
 async function loadAll() {
