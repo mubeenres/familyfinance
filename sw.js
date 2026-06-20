@@ -23,6 +23,7 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
+  // Always network-first for GAS requests
   if (url.hostname.includes('script.google.com')) {
     return;
   }
