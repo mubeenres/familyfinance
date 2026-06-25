@@ -1426,7 +1426,32 @@ function updateExpSubcat(){const cat=document.getElementById('exp-primary-cat')?
 let toastTimer;
 function showToast(msg,type='success'){let t=document.getElementById('app-toast');if(!t){t=document.createElement('div');t.id='app-toast';t.style.cssText='position:fixed;bottom:84px;left:50%;transform:translateX(-50%);color:white;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3);transition:opacity 0.3s;white-space:nowrap;max-width:320px;text-align:center;';document.body.appendChild(t);}t.textContent=msg;t.style.background=type==='error'?'var(--danger)':'#1565C0';t.style.opacity='1';clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.style.opacity='0';},2800);}
 
+// ── INVENTORY SUB‑TAB SWITCHER ──────────────────────────────────
+function invTab(el, tab) {
+  // 1. Update active class on the tabs
+  const container = el.closest('.section-tabs');
+  if (container) {
+    container.querySelectorAll('.stab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
 
+  // 2. Hide all inventory sub‑views
+  const views = ['inv-stock', 'inv-shopping', 'inv-wishlist', 'inv-archive'];
+  views.forEach(id => {
+    const view = document.getElementById(id);
+    if (view) view.style.display = 'none';
+  });
+
+  // 3. Show the selected view
+  const target = document.getElementById('inv-' + tab);
+  if (target) target.style.display = 'block';
+
+  // 4. (Optional) Refresh data if the view is dynamic
+  //    – Shopping list is already generated; Archive and Wishlist are rendered.
+  //    If you want to force a refresh when switching to Shopping, call:
+  //    if (tab === 'shopping') generateShoppingList();
+  //    But they are already loaded when inventory loads.
+}
 
 // ── NEW FEATURES (inventory pack size, wishlist search, scan) ──
 function searchInventoryForWish(query) {
