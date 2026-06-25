@@ -2,8 +2,7 @@
   "name": "FamilyFinance — Expense Tracker",
   "short_name": "FamilyFinance",
   "description": "Shared family expense tracking with OCR, AI insights, and Google Sheets",
-  "start_url": "/familyfinance/index.html",
-  "scope": "/familyfinance/",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#0D47A1",
   "theme_color": "#1565C0",
@@ -16,11 +15,12 @@
     }
   ],
   "categories": ["finance", "utilities"],
+  "screenshots": [],
   "shortcuts": [
     {
       "name": "Add Expense",
       "short_name": "Add",
-      "url": "/familyfinance/index.html#add",
+      "url": "/index.html#add",
       "description": "Quickly add a new expense"
     }
   ]
