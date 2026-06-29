@@ -306,10 +306,10 @@ select.form-control{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:
   <div class="module-loader" data-module="inventory"><span class="material-icons-round">sync</span><span style="font-size:12px;">Loading inventory...</span></div>
   <div class="module-error" data-module="inventory"></div>
   <div class="section-tabs">
-    <div class="stab active" onclick="invTab(this,'stock')">&#x1F4E6; Stock</div>
-    <div class="stab" onclick="invTab(this,'shopping')">&#x1F6D2; Shopping</div>
-    <div class="stab" onclick="invTab(this,'wishlist')">&#x2B50; Wishlist</div>
-    <div class="stab" onclick="invTab(this,'archive')">&#x1F4CB; Archive</div>
+    <div class="stab active" onclick="invTab(this,'stock')" class="stab active">&#x1F4E6; Stock</div>
+    <div class="stab" onclick="invTab(this,'shopping')" class="stab">&#x1F6D2; Shopping</div>
+    <div class="stab" onclick="invTab(this,'wishlist')" class="stab">&#x2B50; Wishlist</div>
+    <div class="stab" onclick="invTab(this,'archive')" class="stab">&#x1F4CB; Archive</div>
   </div>
   <div id="inv-stock">
     <div id="low-stock-banner" style="display:none;padding:0 13px 9px;"><div style="background:var(--danger-bg);border:1px solid var(--danger);border-radius:var(--radius-md);padding:9px 12px;display:flex;gap:7px;align-items:flex-start;"><span class="material-icons-round" style="color:var(--danger);font-size:17px;">warning</span><div><div style="font-size:11px;font-weight:700;color:var(--danger);">Low Stock</div><div style="font-size:10px;color:var(--text-secondary);margin-top:2px;" id="low-stock-text">--</div></div></div></div>
@@ -959,7 +959,20 @@ async function loadTransactions(fresh){
 async function loadAccounts(fresh){
   let d=fresh?null:cacheGet('accounts');
   if(!d){const r=await queueGet('getAccounts');if(r.success){d=r;cacheSet('accounts',d);}}
-  if(d&&d.accounts){ACCOUNTS=d.accounts;populateAccDropdowns();renderAccounts();}
+  if(d&&d.accounts){
+    ACCOUNTS=d.accounts.map(a=>{
+      // Normalise balance — sheet header is 'Balance BD', frontend expects 'balance'
+      a.balance = parseFloat(a['Balance BD'] || a['Balance'] || a.balance || 0);
+      a.name    = a['Account Name'] || a.name || '';
+      a.bank    = a['Bank']  || a.bank  || '';
+      a.type    = a['Type']  || a.type  || '';
+      a.last4   = a['Last 4']|| a.last4 || '';
+      a.owner   = a['Owner'] || a.owner || '';
+      return a;
+    });
+    populateAccDropdowns();
+    renderAccounts();
+  }
   if(TRANSACTIONS.length===0)await loadTransactions(false);
   renderDebts();
 }
@@ -1426,32 +1439,7 @@ function updateExpSubcat(){const cat=document.getElementById('exp-primary-cat')?
 let toastTimer;
 function showToast(msg,type='success'){let t=document.getElementById('app-toast');if(!t){t=document.createElement('div');t.id='app-toast';t.style.cssText='position:fixed;bottom:84px;left:50%;transform:translateX(-50%);color:white;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3);transition:opacity 0.3s;white-space:nowrap;max-width:320px;text-align:center;';document.body.appendChild(t);}t.textContent=msg;t.style.background=type==='error'?'var(--danger)':'#1565C0';t.style.opacity='1';clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.style.opacity='0';},2800);}
 
-// ── INVENTORY SUB‑TAB SWITCHER ──────────────────────────────────
-function invTab(el, tab) {
-  // 1. Update active class on the tabs
-  const container = el.closest('.section-tabs');
-  if (container) {
-    container.querySelectorAll('.stab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-  }
 
-  // 2. Hide all inventory sub‑views
-  const views = ['inv-stock', 'inv-shopping', 'inv-wishlist', 'inv-archive'];
-  views.forEach(id => {
-    const view = document.getElementById(id);
-    if (view) view.style.display = 'none';
-  });
-
-  // 3. Show the selected view
-  const target = document.getElementById('inv-' + tab);
-  if (target) target.style.display = 'block';
-
-  // 4. (Optional) Refresh data if the view is dynamic
-  //    – Shopping list is already generated; Archive and Wishlist are rendered.
-  //    If you want to force a refresh when switching to Shopping, call:
-  //    if (tab === 'shopping') generateShoppingList();
-  //    But they are already loaded when inventory loads.
-}
 
 // ── NEW FEATURES (inventory pack size, wishlist search, scan) ──
 function searchInventoryForWish(query) {
@@ -1867,6 +1855,121 @@ function matchInvItem(name, list) {
   // 4. Generic contains first word of search
   found = list.find(i => (i.generic||'').toLowerCase().includes(firstWord));
   return found || null;
+}
+
+
+// ═══════════════════════════════════════
+// FIX 1: invTab — inventory sub-menu tabs
+// ═══════════════════════════════════════
+function invTab(el, tab) {
+  // Remove active from all stab siblings in section-tabs
+  if (el && el.parentElement) {
+    el.parentElement.querySelectorAll('.stab').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+  }
+  // Show only the selected section
+  const sections = ['stock', 'shopping', 'wishlist', 'archive'];
+  sections.forEach(t => {
+    const el2 = document.getElementById('inv-' + t);
+    if (el2) el2.style.display = (t === tab) ? 'block' : 'none';
+  });
+  // Trigger data generation for specific tabs
+  if (tab === 'shopping') generateShoppingList();
+  if (tab === 'wishlist') renderWishlist();
+  if (tab === 'archive')  renderArchive();
+}
+
+// ═══════════════════════════════════════
+// FIX 2: renderAccounts — show real balances
+// from ACCOUNTS array loaded from Sheets
+// ═══════════════════════════════════════
+function renderAccounts() {
+  const el = document.getElementById('accounts-list');
+  if (!el) return;
+
+  if (!ACCOUNTS.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">No accounts yet — tap + Add to add your bank accounts</div>';
+    return;
+  }
+
+  // Calculate total from all accounts
+  const total = ACCOUNTS.reduce((s, a) => {
+    return s + (parseFloat(a['Balance'] || a['Balance BD'] || a.balance || 0));
+  }, 0);
+
+  const bgs  = ['#E3F2FD','#FCE4EC','#E8F5E9','#F3E5F5','#FFF8E1','#E0F2F1'];
+  const fgs  = ['#1565C0','#C62828','#2E7D32','#6A1B9A','#F57F17','#00695C'];
+  const TYPE_ICONS = {
+    'Credit Card': 'credit_card',
+    'Cash':        'payments',
+    'BenefitPay':  'nfc',
+    'Savings':     'savings',
+    'Business':    'business',
+  };
+
+  el.innerHTML =
+    // Total balance card
+    `<div style="background:linear-gradient(135deg,var(--blue-700),var(--blue-900));border-radius:var(--radius-lg);padding:14px;color:white;margin-bottom:12px;">
+      <div style="font-size:10px;opacity:0.7;margin-bottom:3px;">TOTAL BALANCE</div>
+      <div style="font-size:28px;font-weight:700;letter-spacing:-1px;">BD ${total.toFixed(3)}</div>
+      <div style="font-size:10px;opacity:0.7;margin-top:4px;">${ACCOUNTS.length} account${ACCOUNTS.length !== 1 ? 's' : ''}</div>
+    </div>` +
+
+    // Each account card
+    ACCOUNTS.map((a, i) => {
+      const name    = a['Account Name'] || a.name    || '';
+      const bank    = a['Bank']         || a.bank    || '';
+      const type    = a['Type']         || a.type    || 'Debit Card';
+      const last4   = a['Last 4']       || a.last4   || '';
+      const owner   = a['Owner']        || a.owner   || '';
+      const bal     = parseFloat(a['Balance'] || a['Balance BD'] || a.balance || 0);
+      const icon    = TYPE_ICONS[type]  || 'account_balance';
+      const bg      = bgs[i % bgs.length];
+      const fg      = fgs[i % fgs.length];
+      const isNeg   = bal < 0;
+
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:13px;margin-bottom:8px;display:flex;align-items:center;gap:11px;box-shadow:var(--shadow-sm);">
+        <div style="width:40px;height:40px;border-radius:11px;background:${bg};color:${fg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <span class="material-icons-round" style="font-size:20px;">${icon}</span>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
+          <div style="font-size:10px;color:var(--text-muted);">${bank}${type ? ' · ' + type : ''}${last4 ? ' · ****' + last4 : ''}${owner ? ' · ' + owner : ''}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:16px;font-weight:700;color:${isNeg ? 'var(--danger)' : 'var(--text-primary)'};">BD ${bal.toFixed(3)}</div>
+          ${type === 'Credit Card' ? '<div style="font-size:9px;color:var(--text-muted);">Credit</div>' : ''}
+        </div>
+      </div>`;
+    }).join('');
+}
+
+// ── Also fix renderArchive (was never defined in core) ─────────
+function renderArchive() {
+  const el = document.getElementById('archive-el');
+  if (!el) return;
+  if (!RECEIPT_ARCHIVE.length) {
+    el.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:12px;">No scanned receipts yet<br><span style="font-size:10px;">Receipts appear here after you scan them</span></div>';
+    return;
+  }
+  el.innerHTML = RECEIPT_ARCHIVE.slice(0, 30).map(r => {
+    const vendor  = r['Vendor OCR'] || r['Vendor'] || r.vendor || 'Receipt';
+    const date    = r['Date OCR']   || r['Date']   || r.date   || '';
+    const amount  = parseFloat(r['Amount OCR'] || r['Amount BD'] || r.amount || 0);
+    const conf    = r['Confidence Score'] || r.confidence || '';
+    const scanned = r['Created At']  || r.scannedAt || '';
+    return `<div class="archive-item">
+      <div style="width:40px;height:40px;border-radius:9px;background:var(--blue-50);border:1px solid var(--blue-100);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <span class="material-icons-round" style="font-size:20px;color:var(--blue-400);">receipt</span>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${vendor}</div>
+        <div style="font-size:10px;color:var(--text-muted);">${date ? new Date(date).toLocaleDateString('en-BH',{day:'numeric',month:'short',year:'numeric'}) : '—'}${conf ? ' · AI: ' + conf + '%' : ''}</div>
+        ${scanned ? '<div style="font-size:9px;color:var(--text-muted);">Scanned: ' + new Date(scanned).toLocaleDateString('en-BH',{day:'numeric',month:'short'}) + '</div>' : ''}
+      </div>
+      <div style="font-size:14px;font-weight:700;color:var(--blue-700);flex-shrink:0;">BD ${amount.toFixed(3)}</div>
+    </div>`;
+  }).join('');
 }
 
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
