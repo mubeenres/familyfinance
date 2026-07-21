@@ -200,7 +200,7 @@ select.form-control{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:
   <div id="tab-bar">
     <div class="tab-item active" onclick="switchView('dashboard',this)"><span class="material-icons-round">dashboard</span><span>Home</span></div>
     <div class="tab-item" onclick="switchView('transactions',this)"><span class="material-icons-round">receipt_long</span><span>Txns</span></div>
-    <div class="tab-item" onclick="switchView('accounts',this)"><span class="material-icons-round">account_balance</span><span>Accounts</span></div>
+    <div class="tab-item" id="tab-accounts" onclick="switchView('accounts',this)"><span class="material-icons-round">account_balance</span><span>Accounts</span></div>
     <div class="tab-item" onclick="switchView('budget',this)"><span class="material-icons-round">account_balance_wallet</span><span>Budget</span></div>
     <div class="tab-item" onclick="switchView('inventory',this)"><span class="material-icons-round">inventory_2</span><span>Stock</span></div>
     <div class="tab-item" onclick="switchView('goals',this)"><span class="material-icons-round">flag</span><span>Goals</span></div>
@@ -257,7 +257,7 @@ select.form-control{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:
     <div class="chip" onclick="filterTxnType(this,'expense')">&#x1F4B8; Expenses</div>
     <div class="chip" onclick="filterTxnType(this,'income')">&#x1F4B0; Income</div>
     <div class="chip" onclick="filterTxnType(this,'transfer')">&#x1F504; Transfers</div>
-    <div class="chip" onclick="filterTxnType(this,'debt')">&#x1F91D; Debts</div>
+    <div class="chip" id="chip-debts" onclick="filterTxnType(this,'debt')">&#x1F91D; Debts</div>
   </div>
   <div style="display:flex;gap:7px;padding:0 13px 9px;">
     <div style="flex:1;background:var(--success-bg);border-radius:var(--radius-sm);padding:8px 9px;text-align:center;"><div style="font-size:9px;color:var(--success);font-weight:600;">INCOME</div><div style="font-size:14px;font-weight:700;color:var(--success);" id="txn-income-total">BD --</div></div>
@@ -376,7 +376,7 @@ select.form-control{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:
 <div id="view-networth" class="view">
   <div class="module-loader" data-module="networth"><span class="material-icons-round">sync</span><span style="font-size:12px;">Loading net worth...</span></div>
   <div class="module-error" data-module="networth"></div>
-  <div style="padding:11px 13px 4px;">
+  <div style="padding:11px 13px 4px;" id="nw-total-section">
     <div class="score-card">
       <div style="font-size:10px;font-weight:600;opacity:0.8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">Total Net Worth</div>
       <div style="font-size:36px;font-weight:700;letter-spacing:-1px;" id="nw-total">BD --</div>
@@ -1063,7 +1063,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const t=new Date().toISOString().split('T')[0];
   ['exp-date','inc-date','tfr-date','debt-date','dbt-date','task-due','rem-date','goal-date','scan-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=t;});
   document.getElementById('budget-month-label').textContent=new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'});
-  renderUserSwitcher();updateConnectionStatus();
+  renderUserSwitcher();applyRoleRestrictions();updateConnectionStatus();
   if(GAS_URL)loadAll();else showOffline();
   google.charts.load('current',{packages:['corechart']});
 });
@@ -1389,7 +1389,24 @@ function saveDebt2(){const a=parseFloat(document.getElementById('dbt-amount').va
 function renderNotifications(){const el=document.getElementById('notif-list');if(!el)return;el.innerHTML=REMINDERS.slice(0,10).length?REMINDERS.slice(0,10).map(r=>`<div class="list-item"><div class="list-icon cat-default"><span class="material-icons-round">alarm</span></div><div class="list-info"><div class="list-title">${r.text||r['Reminder']||''}</div><div class="list-sub">${fmtDate(r.date||r['Date'])}</div></div></div>`).join(''):'<div style="padding:22px;text-align:center;color:var(--text-muted);font-size:12px;">No notifications</div>';}
 function renderUserSwitcher(){const el=document.getElementById('user-switcher');if(!el)return;el.innerHTML=USERS.map(u=>`<div style="display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="switchUser(${u.id})"><div style="width:32px;height:32px;border-radius:50%;background:${u.bg};color:${u.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">${u.initials}</div><div style="flex:1;"><div style="font-size:12px;font-weight:600;">${u.name}</div><div style="font-size:10px;color:var(--text-muted);">${u.role}</div></div>${u.id===currentUser.id?'<span class="material-icons-round" style="color:var(--blue-600);font-size:17px;">check_circle</span>':''}</div>`).join('');}
 function updateConnectionStatus(){const el=document.getElementById('connection-status');if(!el)return;el.innerHTML=GAS_URL?'<div style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--success);"><span class="material-icons-round" style="font-size:16px;">check_circle</span>Connected to Google Sheets</div>':'<div style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--danger);"><span class="material-icons-round" style="font-size:16px;">link_off</span>Not connected</div>';}
-function switchUser(id){currentUser=USERS.find(u=>u.id===id);setEl('current-user-name',currentUser.name);const pa=document.getElementById('profile-avatar');if(pa)pa.textContent=currentUser.initials;setEl('profile-name',currentUser.name);setEl('profile-role',currentUser.role);renderUserSwitcher();closeSheet('profile-sheet');}
+function switchUser(id){currentUser=USERS.find(u=>u.id===id);setEl('current-user-name',currentUser.name);const pa=document.getElementById('profile-avatar');if(pa)pa.textContent=currentUser.initials;setEl('profile-name',currentUser.name);setEl('profile-role',currentUser.role);renderUserSwitcher();applyRoleRestrictions();closeSheet('profile-sheet');}
+function isAdmin(){return currentUser && currentUser.role==='Admin';}
+function applyRoleRestrictions(){
+  const admin=isAdmin();
+  const tabAcc=document.getElementById('tab-accounts');if(tabAcc)tabAcc.style.display=admin?'':'none';
+  const chipDebt=document.getElementById('chip-debts');if(chipDebt)chipDebt.style.display=admin?'':'none';
+  const nwTotal=document.getElementById('nw-total-section');if(nwTotal)nwTotal.style.display=admin?'':'none';
+  if(!admin){
+    const accView=document.getElementById('view-accounts');
+    if(accView && accView.classList.contains('active')) switchToView('dashboard');
+    if(typeof txnTypeF!=='undefined' && txnTypeF==='debt'){
+      txnTypeF='all';
+      document.querySelectorAll('.chips .chip').forEach(c=>c.classList.remove('active'));
+      const allChip=document.querySelector('.chips .chip');if(allChip)allChip.classList.add('active');
+      if(typeof renderTxnList==='function')renderTxnList();
+    }
+  }
+}
 function saveGasUrl(){const val=document.getElementById('gas-url').value.trim();if(!val||!val.includes('script.google.com')){showToast('Paste valid GAS /exec URL','error');return;}GAS_URL=val;localStorage.setItem('gas_url',GAS_URL);updateConnectionStatus();closeSheet('profile-sheet');showToast('Connected! Loading data...');loadAll();}
 
 // ═══════════════════════════════════════════════════════════════
