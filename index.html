@@ -729,7 +729,7 @@ select.form-control{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:
     <!-- Search from inventory -->
     <div style="position:relative;margin-bottom:12px;">
       <span class="material-icons-round" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:16px;">search</span>
-      <input type="text" class="form-control" id="wish-search" placeholder="Search inventory to prefill..." style="padding-left:33px;" oninput="searchInventoryForWish(this.value)">
+      <input type="text" class="form-control" id="wish-inv-search" placeholder="Search inventory to prefill..." style="padding-left:33px;" oninput="searchInventoryForWish(this.value)">
       <div id="wish-search-results" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);max-height:160px;overflow-y:auto;z-index:300;box-shadow:var(--shadow-md);"></div>
     </div>
     <div class="form-group"><label class="form-label">Item Name</label><input type="text" class="form-control" id="wish-name" placeholder="e.g. Almarai Milk 1L, Basmati Rice 5kg..."></div>
@@ -866,9 +866,9 @@ function switchView(view, tabEl) {
 
   // Highlight correct bottom nav item
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const navMap = {dashboard:0, transactions:1, inventory:3, analytics:4};
+  const navMap = {dashboard:0, transactions:1, inventory:2, analytics:3};
   const navItems = document.querySelectorAll('.nav-item');
-  if (navMap[view] !== undefined) navItems[navMap[view]].classList.add('active');
+  if (navMap[view] !== undefined && navItems[navMap[view]]) navItems[navMap[view]].classList.add('active');
 
   // Lazy-load module data from Google Sheets
   if (typeof GAS_URL !== 'undefined' && GAS_URL) {
@@ -1051,6 +1051,7 @@ let TRANSACTIONS=[],BUDGETS=[],ACCOUNTS=[],INV_GROCERY=[],INV_HOUSEHOLD=[];
 let GOALS=[],TASKS=[],REMINDERS=[],WISHLIST=[],ASSETS=[],LIABILITIES=[];
 let AI_INSIGHTS=[],RECEIPT_ARCHIVE=[],SHOPPING_LIST=[];
 let txnTypeF='all',txnSearch='';
+let wishSearchQ='',wishCatF='all';
 
 // ═══════════════════════════════════════════════════════════════
 // INIT
@@ -1208,7 +1209,7 @@ function updateBudgetSummary(){
   const exp=TRANSACTIONS.filter(t=>t.txnType==='expense'&&t.month===m&&t.year===y).reduce((s,t)=>s+(t.amountBD||0),0);
   setEl('bud-income','BD '+inc.toFixed(0));setEl('bud-used','BD '+exp.toFixed(0));setEl('bud-saved','BD '+(inc-exp).toFixed(0));
 }
-function changeBudgetMonth(o){currentBudgetMonthOffset+=o;const d=new Date();d.setMonth(d.getMonth()+currentBudgetMonthOffset);setEl('budget-month-label',d.toLocaleDateString('en-US',{month:'long',year:'numeric'}));}
+function changeBudgetMonth(o){currentBudgetMonthOffset+=o;const d=new Date();d.setMonth(d.getMonth()+currentBudgetMonthOffset);setEl('budget-month-label',d.toLocaleDateString('en-US',{month:'long',year:'numeric'}));MODULE_LOADED['budget']=false;loadModule('budget',true);}
 
 // ═══════════════════════════════════════════════════════════════
 // SMART REMINDERS (dashboard)
@@ -1271,6 +1272,8 @@ function updateLowStockBanner(){
   else el.style.display='none';
 }
 function markWishBought(idx){WISHLIST[idx].purchased=true;renderWishlist();generateShoppingList();showToast('Marked as purchased ✅');}
+function filterWishlist(v){wishSearchQ=v||'';renderWishlist();}
+function filterWishCat(el,cat){if(el&&el.parentElement)el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));if(el)el.classList.add('active');wishCatF=cat;renderWishlist();}
 
 // ═══════════════════════════════════════════════════════════════
 // GOALS / TASKS / REMINDERS
@@ -1414,7 +1417,7 @@ function generateMonthlyReport(){
 // ═══════════════════════════════════════════════════════════════
 // CHARTS
 // ═══════════════════════════════════════════════════════════════
-function initCharts(){if(typeof google==='undefined'||!google.visualization){google.charts.load('current',{packages:['corechart']});google.charts.setOnLoadCallback(()=>{drawTrend();drawCat();drawBudHist();drawConsumption();drawGoodBad();drawMember();drawForecast();});return;}drawTrend();drawCat();drawBudHist();drawConsumption();drawGoodBad();drawMember();drawForecast();}
+function initCharts(){if(typeof google==='undefined'||!google.visualization){google.charts.load('current',{packages:['corechart']});google.charts.setOnLoadCallback(()=>{drawTrend();drawCat();drawBudHist();drawConsumption();drawGoodBad();drawMember();drawForecast();drawNWChart();});return;}drawTrend();drawCat();drawBudHist();drawConsumption();drawGoodBad();drawMember();drawForecast();drawNWChart();}
 function ct(){const dk=document.documentElement.getAttribute('data-theme')==='dark';return{text:dk?'#94A3B8':'#4A5568',bg:'transparent',grid:dk?'#1C2940':'#EEF3FC'};}
 function getMonthlyExp(n){const now=new Date();const rows=[];for(let i=n;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const m=d.getMonth()+1,y=d.getFullYear();const tot=TRANSACTIONS.filter(t=>t.txnType==='expense'&&t.month===m&&t.year===y).reduce((s,t)=>s+(t.amountBD||0),0);rows.push([d.toLocaleDateString('en-US',{month:'short'}),tot]);}return rows;}
 function drawTrend(){const el=document.getElementById('trendChart');if(!el)return;const rows=[['Month','Expenses'],...getMonthlyExp(5)];if(!rows.slice(1).some(r=>r[1]>0)){el.innerHTML='<div style="padding:18px;text-align:center;color:var(--text-muted);font-size:11px;">No data yet</div>';return;}const t=ct();new google.visualization.ColumnChart(el).draw(google.visualization.arrayToDataTable(rows),{legend:'none',colors:['#1565C0'],backgroundColor:t.bg,chartArea:{left:40,right:7,top:7,bottom:26},hAxis:{textStyle:{color:t.text,fontSize:9}},vAxis:{textStyle:{color:t.text,fontSize:9},gridlines:{color:t.grid}},height:150});}
@@ -1482,7 +1485,7 @@ function fillWishFromInventory(item) {
   const catEl = document.getElementById('wish-cat');
   if (catEl) catEl.value = item.category === 'Household' ? 'Household' : 'Grocery';
   document.getElementById('wish-search-results').style.display = 'none';
-  document.getElementById('wish-search').value = '';
+  document.getElementById('wish-inv-search').value = '';
 }
 
 function calcInvDisplay() {
@@ -1628,9 +1631,16 @@ function renderWishlist() {
   }
 
   const today = new Date();
-  el.innerHTML = WISHLIST
-    .filter(w => !w.purchased)
-    .map((w, i) => {
+  const q = (typeof wishSearchQ !== 'undefined' ? wishSearchQ : '').toLowerCase().trim();
+  const catF = (typeof wishCatF !== 'undefined' ? wishCatF : 'all');
+  const filtered = WISHLIST
+    .map((w, idx) => ({ w, idx }))
+    .filter(({w}) => !w.purchased)
+    .filter(({w}) => catF === 'all' || w.category === catF)
+    .filter(({w}) => !q || [w.name, w.vendor, w.category, w.brand, w.generic].filter(Boolean).join(' ').toLowerCase().includes(q));
+  const countLbl = document.getElementById('wish-count-label'); if (countLbl) countLbl.textContent = filtered.length + ' item(s)';
+  el.innerHTML = filtered
+    .map(({w, idx}) => {
       const hasOffer    = w.offerExpiry && w.offerPrice > 0;
       const daysLeft    = w.offerExpiry
         ? Math.ceil((new Date(w.offerExpiry) - today) / 86400000)
@@ -1673,11 +1683,11 @@ function renderWishlist() {
           <div style="font-size:10px;color:var(--text-muted);">${w.notes || ''}</div>
           <div style="display:flex;gap:6px;align-items:center;">
             ${w.cost > 0 ? `<span style="font-size:12px;color:var(--text-muted);">BD ${w.cost.toFixed(3)}</span>` : ''}
-            <button onclick="markWishBought(${i})" style="font-size:9px;padding:3px 9px;border:1px solid var(--success);border-radius:9px;background:var(--success-bg);color:var(--success);cursor:pointer;font-weight:600;">Bought</button>
+            <button onclick="markWishBought(${idx})" style="font-size:9px;padding:3px 9px;border:1px solid var(--success);border-radius:9px;background:var(--success-bg);color:var(--success);cursor:pointer;font-weight:600;">Bought</button>
           </div>
         </div>
       </div>`;
-    }).join('') || '<div style="padding:18px;text-align:center;color:var(--text-muted);font-size:12px;">All items purchased!</div>';
+    }).join('') || '<div style="padding:18px;text-align:center;color:var(--text-muted);font-size:12px;">'+(q||catF!=='all'?'No matching items':'All items purchased!')+'</div>';
 }
 
 function renderInventoryItem(item) {
@@ -1745,6 +1755,15 @@ function compressImg(file,maxW,quality,cb){
     img.src=e.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+function processScan(file){
+  if(!GAS_URL){showToast('Connect GAS URL first','error');return;}
+  if(!file){return;}
+  if(file.type && !file.type.startsWith('image/')){showToast('Please choose an image file','error');return;}
+  const uz=document.getElementById('scan-upload-zone'),pr=document.getElementById('scan-processing'),rs=document.getElementById('scan-result');
+  if(uz)uz.style.display='none';if(rs)rs.style.display='none';if(pr)pr.style.display='block';
+  compressImg(file,1280,0.75,(base64,mimeType)=>{sendScanToGAS(base64,mimeType);});
 }
 
 function sendScanToGAS(base64,mimeType){
