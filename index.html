@@ -1341,7 +1341,7 @@ function runAIAnalysis(){
   const xhr=new XMLHttpRequest();xhr.open('POST',GAS_URL,true);xhr.setRequestHeader('Content-Type','text/plain');xhr.timeout=120000;
   xhr.onload=function(){try{const d=JSON.parse(xhr.responseText);if(d.success&&d.analysis){if(d.analysis.insights){AI_INSIGHTS=d.analysis.insights.map(normInsight);cacheSet('ai_insights',{success:true,insights:d.analysis.insights});renderAIInsights();}if(d.analysis.healthScore){setEl('health-score',d.analysis.healthScore);const sf=document.getElementById('score-fill');if(sf)sf.style.width=d.analysis.healthScore+'%';setEl('health-label',d.analysis.healthLabel||'Good');}showToast('AI analysis complete ✅');}else showToast(d.error||'AI failed','error');}catch(e){showToast('AI parse error','error');}};
   xhr.onerror=()=>showToast('AI request failed','error');xhr.ontimeout=()=>showToast('AI timed out','error');
-  xhr.send(JSON.stringify({action:'runAIAnalysis'}));
+  xhr.send(JSON.stringify({action:'runAIAnalysis',idToken:ID_TOKEN}));
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1443,7 +1443,7 @@ function generateMonthlyReport(){
   const xhr=new XMLHttpRequest();xhr.open('POST',GAS_URL,true);xhr.setRequestHeader('Content-Type','text/plain');xhr.timeout=60000;
   xhr.onload=function(){try{const d=JSON.parse(xhr.responseText);showToast(d.success?'Report sent to all family emails ✅':'Report error: '+(d.error||''),d.success?'success':'error');}catch(e){showToast('Report sent ✅');}};
   xhr.onerror=()=>showToast('Report failed','error');
-  xhr.send(JSON.stringify({action:'generateMonthlyReport',data:report}));
+  xhr.send(JSON.stringify({action:'generateMonthlyReport',data:report,idToken:ID_TOKEN}));
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1816,7 +1816,7 @@ function sendScanToGAS(base64,mimeType){
   };
   xhr.onerror=()=>{resetScan();showToast('Network error','error');};
   xhr.ontimeout=()=>{resetScan();showToast('Timed out — try clearer photo','error');};
-  xhr.send(JSON.stringify({action:'processOCR',imageData:base64,mimeType}));
+  xhr.send(JSON.stringify({action:'processOCR',imageData:base64,mimeType,idToken:ID_TOKEN}));
 }
 
 function populateScanForm(data){
