@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 <script src="https://www.gstatic.com/charts/loader.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
   --blue-50:#E3F2FD;--blue-100:#BBDEFB;--blue-200:#90CAF9;--blue-300:#64B5F6;
@@ -183,6 +184,14 @@ select.form-control{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:
 </style>
 </head>
 <body>
+<div id="signin-gate" style="position:fixed;inset:0;background:var(--surface,#fff);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;">
+  <div style="font-size:42px;">&#x1F4B0;</div>
+  <div style="font-size:20px;font-weight:700;color:var(--text-primary);">FamilyFinance</div>
+  <div style="font-size:13px;color:var(--text-muted);max-width:280px;margin-bottom:6px;">Sign in with your family Google account to continue</div>
+  <div id="g_id_signin_container"></div>
+  <div id="signin-loading" style="font-size:12px;color:var(--text-muted);">Loading Google Sign-In...</div>
+  <div id="signin-error" style="display:none;color:#C62828;font-size:12px;max-width:280px;"></div>
+</div>
 <div class="global-loader" id="global-loader"></div>
 <div class="cache-badge" id="cache-badge">⚡ From cache</div>
 <div id="app-header">
@@ -819,7 +828,7 @@ select.form-control{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:
       <div style="font-size:16px;font-weight:700;" id="profile-name">Mubeen</div>
       <div style="font-size:11px;color:var(--text-muted);" id="profile-role">Admin</div>
     </div>
-    <div style="border-top:1px solid var(--border);padding-top:13px;"><div class="card-title">Switch User</div><div id="user-switcher"></div></div>
+    <div style="border-top:1px solid var(--border);padding-top:13px;"><button class="btn" style="width:100%;background:var(--danger-bg,#FCE4EC);color:var(--danger,#C62828);" onclick="signOut()"><span class="material-icons-round">logout</span> Sign Out</button></div>
     <div style="border-top:1px solid var(--border);padding-top:13px;margin-top:7px;">
       <div class="card-title">Google Apps Script URL</div>
       <input type="url" class="form-control" id="gas-url" placeholder="https://script.google.com/macros/s/...exec" style="font-size:11px;margin-bottom:5px;">
@@ -842,11 +851,12 @@ select.form-control{background-image:url("data:image/svg+xml,%3Csvg xmlns='http:
 <script>
 // FamilyFinance v2.1 — Complete Script
 const FX = { BD:1, USD:0.376, AED:0.102, SAR:0.100, INR:0.00452 };
+const OAUTH_CLIENT_ID = '484097255216-bg4edg4ir82mbuiatqsffmh5lp8qqq3h.apps.googleusercontent.com';
 const USERS = [
-  {id:1,name:'Mubeen', initials:'MU',role:'Admin', color:'#1565C0',bg:'#E3F2FD'},
-  {id:2,name:'Hajara', initials:'HA',role:'Member',color:'#C62828',bg:'#FCE4EC'},
-  {id:3,name:'Afnan',  initials:'AF',role:'Member',color:'#2E7D32',bg:'#E8F5E9'},
-  {id:4,name:'Afraz',  initials:'AZ',role:'Member',color:'#6A1B9A',bg:'#F3E5F5'},
+  {id:1,name:'Mubeen', initials:'MU',role:'Admin', color:'#1565C0',bg:'#E3F2FD', email:'mubeen.bahrain@gmail.com'},
+  {id:2,name:'Hajara', initials:'HA',role:'Member',color:'#C62828',bg:'#FCE4EC', email:'hajaramm@gmail.com'},
+  {id:3,name:'Afnan',  initials:'AF',role:'Member',color:'#2E7D32',bg:'#E8F5E9', email:'afnan.m.bhr@gmail.com'},
+  {id:4,name:'Afraz',  initials:'AZ',role:'Member',color:'#6A1B9A',bg:'#F3E5F5', email:'afraz.m.bhr@gmail.com'},
 ];
 const VIEWS=['dashboard','transactions','accounts','budget','inventory','goals','networth','analytics'];
 
@@ -902,7 +912,7 @@ function cacheClearAll(){try{Object.keys(localStorage).filter(k=>k.startsWith('f
 const API_QUEUE=[];let API_RUNNING=0;const API_MAX=2;
 function queueGet(action){return new Promise((resolve,reject)=>{API_QUEUE.push({action,resolve,reject});drainQueue();});}
 function drainQueue(){while(API_RUNNING<API_MAX&&API_QUEUE.length>0){const{action,resolve,reject}=API_QUEUE.shift();API_RUNNING++;fetchWithRetry(action).then(resolve).catch(reject).finally(()=>{API_RUNNING--;drainQueue();});}}
-async function fetchWithRetry(action,attempt=0){const MAX=3;try{const res=await fetch(GAS_URL+'?action='+action,{signal:AbortSignal.timeout(30000)});if(!res.ok)throw new Error('HTTP '+res.status);return await res.json();}catch(err){if(attempt<MAX-1){await new Promise(r=>setTimeout(r,Math.pow(2,attempt)*1000));return fetchWithRetry(action,attempt+1);}throw err;}}
+async function fetchWithRetry(action,attempt=0){const MAX=3;try{const res=await fetch(GAS_URL+'?action='+action+'&id_token='+encodeURIComponent(ID_TOKEN||''),{signal:AbortSignal.timeout(30000)});if(!res.ok)throw new Error('HTTP '+res.status);return await res.json();}catch(err){if(attempt<MAX-1){await new Promise(r=>setTimeout(r,Math.pow(2,attempt)*1000));return fetchWithRetry(action,attempt+1);}throw err;}}
 
 // ═══════════════════════════════════════════════════════════════
 // MODULE LOADER STATE
@@ -1045,7 +1055,7 @@ function normInsight(i){return{type:i['Type']||i.type||'neutral',icon:(i['Type']
 // ═══════════════════════════════════════════════════════════════
 // STATE VARIABLES
 // ═══════════════════════════════════════════════════════════════
-let currentUser=USERS[0],GAS_URL=localStorage.getItem('gas_url')||'',isDark=localStorage.getItem('theme')==='dark';
+let currentUser=null,ID_TOKEN=null,GAS_URL=localStorage.getItem('gas_url')||'',isDark=localStorage.getItem('theme')==='dark';
 let currentBudgetMonthOffset=0,splitCount=1,debtDir='borrowed',debtDir2='borrowed';
 let TRANSACTIONS=[],BUDGETS=[],ACCOUNTS=[],INV_GROCERY=[],INV_HOUSEHOLD=[];
 let GOALS=[],TASKS=[],REMINDERS=[],WISHLIST=[],ASSETS=[],LIABILITIES=[];
@@ -1063,9 +1073,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   const t=new Date().toISOString().split('T')[0];
   ['exp-date','inc-date','tfr-date','debt-date','dbt-date','task-due','rem-date','goal-date','scan-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=t;});
   document.getElementById('budget-month-label').textContent=new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'});
-  renderUserSwitcher();applyRoleRestrictions();updateConnectionStatus();
-  if(GAS_URL)loadAll();else showOffline();
   google.charts.load('current',{packages:['corechart']});
+  waitForGSI();
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -1387,9 +1396,15 @@ function saveDebt2(){const a=parseFloat(document.getElementById('dbt-amount').va
 // NOTIFICATIONS & USER
 // ═══════════════════════════════════════════════════════════════
 function renderNotifications(){const el=document.getElementById('notif-list');if(!el)return;el.innerHTML=REMINDERS.slice(0,10).length?REMINDERS.slice(0,10).map(r=>`<div class="list-item"><div class="list-icon cat-default"><span class="material-icons-round">alarm</span></div><div class="list-info"><div class="list-title">${r.text||r['Reminder']||''}</div><div class="list-sub">${fmtDate(r.date||r['Date'])}</div></div></div>`).join(''):'<div style="padding:22px;text-align:center;color:var(--text-muted);font-size:12px;">No notifications</div>';}
-function renderUserSwitcher(){const el=document.getElementById('user-switcher');if(!el)return;el.innerHTML=USERS.map(u=>`<div style="display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="switchUser(${u.id})"><div style="width:32px;height:32px;border-radius:50%;background:${u.bg};color:${u.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">${u.initials}</div><div style="flex:1;"><div style="font-size:12px;font-weight:600;">${u.name}</div><div style="font-size:10px;color:var(--text-muted);">${u.role}</div></div>${u.id===currentUser.id?'<span class="material-icons-round" style="color:var(--blue-600);font-size:17px;">check_circle</span>':''}</div>`).join('');}
 function updateConnectionStatus(){const el=document.getElementById('connection-status');if(!el)return;el.innerHTML=GAS_URL?'<div style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--success);"><span class="material-icons-round" style="font-size:16px;">check_circle</span>Connected to Google Sheets</div>':'<div style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--danger);"><span class="material-icons-round" style="font-size:16px;">link_off</span>Not connected</div>';}
-function switchUser(id){currentUser=USERS.find(u=>u.id===id);setEl('current-user-name',currentUser.name);const pa=document.getElementById('profile-avatar');if(pa)pa.textContent=currentUser.initials;setEl('profile-name',currentUser.name);setEl('profile-role',currentUser.role);renderUserSwitcher();applyRoleRestrictions();closeSheet('profile-sheet');}
+function decodeJwt(token){try{const base64=token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');const json=decodeURIComponent(atob(base64).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));return JSON.parse(json);}catch(e){return null;}}
+function showSigninError(msg){const el=document.getElementById('signin-error');const ld=document.getElementById('signin-loading');if(ld)ld.style.display='none';if(el){el.textContent=msg;el.style.display='block';}}
+function applySignedInUser(){const gate=document.getElementById('signin-gate');if(gate)gate.style.display='none';setEl('current-user-name',currentUser.name);const pa=document.getElementById('profile-avatar');if(pa)pa.textContent=currentUser.initials;setEl('profile-name',currentUser.name);setEl('profile-role',currentUser.role);applyRoleRestrictions();updateConnectionStatus();if(GAS_URL)loadAll();else showOffline();}
+function handleCredentialResponse(resp){const payload=decodeJwt(resp.credential);if(!payload){showSigninError('Could not read Google sign-in response. Please try again.');return;}const email=(payload.email||'').toLowerCase();const match=USERS.find(u=>u.email===email);if(!payload.email_verified||!match){showSigninError('This Google account ('+(payload.email||'unknown')+') is not authorized for FamilyFinance. Ask the admin to add it.');return;}ID_TOKEN=resp.credential;currentUser=match;localStorage.setItem('ff_id_token',ID_TOKEN);localStorage.setItem('ff_id_token_exp',String(payload.exp*1000));applySignedInUser();}
+function restoreSession(){const tok=localStorage.getItem('ff_id_token');const exp=parseInt(localStorage.getItem('ff_id_token_exp')||'0',10);if(!tok||!exp||Date.now()>exp-60000)return false;const payload=decodeJwt(tok);if(!payload)return false;const email=(payload.email||'').toLowerCase();const match=USERS.find(u=>u.email===email);if(!match)return false;ID_TOKEN=tok;currentUser=match;applySignedInUser();return true;}
+function initGoogleSignIn(){const ld=document.getElementById('signin-loading');if(ld)ld.style.display='none';google.accounts.id.initialize({client_id:OAUTH_CLIENT_ID,callback:handleCredentialResponse,auto_select:true});const c=document.getElementById('g_id_signin_container');if(c)google.accounts.id.renderButton(c,{theme:'outline',size:'large',text:'signin_with',shape:'pill'});if(!restoreSession()){google.accounts.id.prompt();}}
+function waitForGSI(retries){if(retries===undefined)retries=50;if(window.google&&google.accounts&&google.accounts.id){initGoogleSignIn();}else if(retries>0){setTimeout(()=>waitForGSI(retries-1),100);}else{showSigninError('Could not load Google Sign-In. Check your connection and reload.');}}
+function signOut(){ID_TOKEN=null;currentUser=null;localStorage.removeItem('ff_id_token');localStorage.removeItem('ff_id_token_exp');if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();closeSheet('profile-sheet');const gate=document.getElementById('signin-gate');if(gate)gate.style.display='flex';const err=document.getElementById('signin-error');if(err)err.style.display='none';if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.prompt();}
 function isAdmin(){return currentUser && currentUser.role==='Admin';}
 function applyRoleRestrictions(){
   const admin=isAdmin();
@@ -1414,7 +1429,7 @@ function saveGasUrl(){const val=document.getElementById('gas-url').value.trim();
 // ═══════════════════════════════════════════════════════════════
 function openSheet(id){const o=document.getElementById('overlay-'+id),s=document.getElementById(id);if(o)o.classList.add('open');if(s)s.classList.add('open');}
 function closeSheet(id){const o=document.getElementById('overlay-'+id),s=document.getElementById(id);if(o)o.classList.remove('open');if(s)s.classList.remove('open');}
-function gasPost(action,data,cb){if(!GAS_URL)return;const xhr=new XMLHttpRequest();xhr.open('POST',GAS_URL,true);xhr.setRequestHeader('Content-Type','text/plain');xhr.onload=function(){try{if(cb)cb(JSON.parse(xhr.responseText));}catch(e){}};xhr.send(JSON.stringify({action,data}));}
+function gasPost(action,data,cb){if(!GAS_URL)return;const xhr=new XMLHttpRequest();xhr.open('POST',GAS_URL,true);xhr.setRequestHeader('Content-Type','text/plain');xhr.onload=function(){try{if(cb)cb(JSON.parse(xhr.responseText));}catch(e){}};xhr.send(JSON.stringify({action,data,idToken:ID_TOKEN}));}
 
 // ═══════════════════════════════════════════════════════════════
 // MONTHLY REPORT
